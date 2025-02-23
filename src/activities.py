@@ -189,7 +189,9 @@ class Activities:
                 self.completeSearch()
         except Exception:
             logging.error(f"[ACTIVITY] Error doing {activityTitle}", exc_info=True)
+        logging.debug(f"Entering Sleep after Activity")
         scheduled_sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+        logging.debug(f"Finished Sleep after Activity")
         self.browser.utils.resetTabs()
 
     def completeActivities(self):
