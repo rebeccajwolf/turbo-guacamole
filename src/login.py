@@ -14,7 +14,7 @@ from undetected_chromedriver import Chrome
 
 from src.browser import Browser
 from src.utils import sendNotification, CONFIG
-from exceptions import *
+from src.exceptions import *
 
 class Login:
     browser: Browser
