@@ -617,7 +617,7 @@ def update_config_from_env():
                     'email': email.strip(),
                     'password': password.strip()
                 })
-            logging.info(f"Updated {len(account_pairs)} accounts from environment")
+            print(f"Updated {len(account_pairs)} accounts from environment")
         
         # Update Discord webhook from TOKEN env var
         token_env = os.getenv('TOKEN')
@@ -629,14 +629,14 @@ def update_config_from_env():
             
             # Clear existing urls and add new token
             config['apprise']['urls'] = [token_env]
-            logging.info("Updated Discord webhook URL from environment")
+            print("Updated Discord webhook URL from environment")
         
         # Write updated config back to file
         with open(config_path, 'w') as file:
             yaml.safe_dump(config, file, default_flow_style=False)
             
     except Exception as e:
-        logging.error(f"Failed to update config from environment: {str(e)}")
+        print(f"Failed to update config from environment: {str(e)}")
         raise
 
 
@@ -646,7 +646,7 @@ def loadConfig(
     args = argumentParser()
 
     update_config_from_env()
-    
+
     if args.config:
         configFile = Path(args.config)
     else:

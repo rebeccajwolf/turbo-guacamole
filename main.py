@@ -26,7 +26,9 @@ from src import (
 from src.activities import Activities
 from src.browser import RemainingSearches
 from src.loggingColoredFormatter import ColoredFormatter
+print("Starting program...")
 from src.utils import CONFIG, sendNotification, getProjectRoot, formatNumber
+print("CONFIG loaded")
 
 
 
