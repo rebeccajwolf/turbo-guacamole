@@ -26,9 +26,8 @@ from src import (
 from src.activities import Activities
 from src.browser import RemainingSearches
 from src.loggingColoredFormatter import ColoredFormatter
-print("Starting program...")
 from src.utils import CONFIG, sendNotification, getProjectRoot, formatNumber
-print("CONFIG loaded")
+from src.exceptions import *
 
 
 
@@ -207,85 +206,115 @@ def executeBot(currentAccount):
 	goalTitle: str
 	goalPoints: int
 
-	if CONFIG.search.type in ("desktop", "both", None):
-		with Browser(mobile=False, account=currentAccount) as desktopBrowser:
-			utils = desktopBrowser.utils
-			Login(desktopBrowser).login()
-			startingPoints = utils.getAccountPoints()
-			logging.info(
-				f"[POINTS] You have {formatNumber(startingPoints)} points on your account"
-			)
-			Activities(desktopBrowser).completeActivities()
-			PunchCards(desktopBrowser).completePunchCards()
-			# VersusGame(desktopBrowser).completeVersusGame()
+	try:
 
-			with Searches(desktopBrowser) as searches:
-				searches.bingSearches()
-
-			goalPoints = utils.getGoalPoints()
-			goalTitle = utils.getGoalTitle()
-
-			remainingSearches = desktopBrowser.getRemainingSearches(
-				desktopAndMobile=True
-			)
-			accountPoints = utils.getAccountPoints()
-
-	if CONFIG.search.type in ("mobile", "both", None):
-		with Browser(mobile=True, account=currentAccount) as mobileBrowser:
-			utils = mobileBrowser.utils
-			Login(mobileBrowser).login()
-			if startingPoints is None:
+		if CONFIG.search.type in ("desktop", "both", None):
+			with Browser(mobile=False, account=currentAccount) as desktopBrowser:
+				utils = desktopBrowser.utils
+				Login(desktopBrowser).login()
 				startingPoints = utils.getAccountPoints()
-			ReadToEarn(mobileBrowser).completeReadToEarn()
-			with Searches(mobileBrowser) as searches:
-				searches.bingSearches()
+				logging.info(
+					f"[POINTS] You have {formatNumber(startingPoints)} points on your account"
+				)
+				Activities(desktopBrowser).completeActivities()
+				PunchCards(desktopBrowser).completePunchCards()
+				# VersusGame(desktopBrowser).completeVersusGame()
 
-			goalPoints = utils.getGoalPoints()
-			goalTitle = utils.getGoalTitle()
+				with Searches(desktopBrowser) as searches:
+					searches.bingSearches()
 
-			remainingSearches = mobileBrowser.getRemainingSearches(
-				desktopAndMobile=True
-			)
-			accountPoints = utils.getAccountPoints()
+				goalPoints = utils.getGoalPoints()
+				goalTitle = utils.getGoalTitle()
 
-	logging.info(
-		f"[POINTS] You have earned {formatNumber(accountPoints - startingPoints)} points this run !"
-	)
-	logging.info(f"[POINTS] You are now at {formatNumber(accountPoints)} points !")
-	appriseSummary = AppriseSummary[CONFIG.apprise.summary]
-	if appriseSummary == AppriseSummary.ALWAYS:
-		goalStatus = ""
-		if goalPoints > 0:
-			logging.info(
-				f"[POINTS] You are now at {(formatNumber((accountPoints / goalPoints) * 100))}% of your "
-				f"goal ({goalTitle}) !"
-			)
-			goalStatus = (
-				f"🎯 Goal reached: {(formatNumber((accountPoints / goalPoints) * 100))}%"
-				f" ({goalTitle})"
-			)
+				remainingSearches = desktopBrowser.getRemainingSearches(
+					desktopAndMobile=True
+				)
+				accountPoints = utils.getAccountPoints()
 
-		sendNotification(
-			"Daily Points Update",
-			"\n".join(
-				[
-					f"👤 Account: {currentAccount.email}",
-					f"⭐️ Points earned today: {formatNumber(accountPoints - startingPoints)}",
-					f"💰 Total points: {formatNumber(accountPoints)}",
-					goalStatus,
-				]
-			),
+		if CONFIG.search.type in ("mobile", "both", None):
+			with Browser(mobile=True, account=currentAccount) as mobileBrowser:
+				utils = mobileBrowser.utils
+				Login(mobileBrowser).login()
+				if startingPoints is None:
+					startingPoints = utils.getAccountPoints()
+				ReadToEarn(mobileBrowser).completeReadToEarn()
+				with Searches(mobileBrowser) as searches:
+					searches.bingSearches()
+
+				goalPoints = utils.getGoalPoints()
+				goalTitle = utils.getGoalTitle()
+
+				remainingSearches = mobileBrowser.getRemainingSearches(
+					desktopAndMobile=True
+				)
+				accountPoints = utils.getAccountPoints()
+
+		logging.info(
+			f"[POINTS] You have earned {formatNumber(accountPoints - startingPoints)} points this run !"
 		)
-	elif appriseSummary == AppriseSummary.ON_ERROR:
-		if remainingSearches.getTotal() > 0:
-			sendNotification(
-				"Error: remaining searches",
-				f"account email: {currentAccount.email}, {remainingSearches}",
-			)
-	elif appriseSummary == AppriseSummary.NEVER:
-		pass
+		logging.info(f"[POINTS] You are now at {formatNumber(accountPoints)} points !")
+		appriseSummary = AppriseSummary[CONFIG.apprise.summary]
+		if appriseSummary == AppriseSummary.ALWAYS:
+			goalStatus = ""
+			if goalPoints > 0:
+				logging.info(
+					f"[POINTS] You are now at {(formatNumber((accountPoints / goalPoints) * 100))}% of your "
+					f"goal ({goalTitle}) !"
+				)
+				goalStatus = (
+					f"🎯 Goal reached: {(formatNumber((accountPoints / goalPoints) * 100))}%"
+					f" ({goalTitle})"
+				)
 
-	return accountPoints
+			sendNotification(
+				"Daily Points Update",
+				"\n".join(
+					[
+						f"👤 Account: {currentAccount.email}",
+						f"⭐️ Points earned today: {formatNumber(accountPoints - startingPoints)}",
+						f"💰 Total points: {formatNumber(accountPoints)}",
+						goalStatus,
+					]
+				),
+			)
+		elif appriseSummary == AppriseSummary.ON_ERROR:
+			if remainingSearches.getTotal() > 0:
+				sendNotification(
+					"Error: remaining searches",
+					f"account email: {currentAccount.email}, {remainingSearches}",
+				)
+		elif appriseSummary == AppriseSummary.NEVER:
+			pass
+
+		return accountPoints
+	except AccountLockedException:
+        sendNotification(
+            "Account Update",
+            "\n".join(
+                [
+                    f"👤 Account: {currentAccount.username}",
+                    f"Your account has been locked !",
+                    f"⚠️ Locked",
+                ]
+            ),
+        )
+        raise
+    except AccountSuspendedException:
+        sendNotification(
+            "Account Update",
+            "\n".join(
+                [
+                    f"👤 Account: {currentAccount.username}",
+                    f"Your account has been suspended !",
+                    f"❌ Suspended",
+                ]
+            ),
+        )
+        raise
+    except Exception as e:
+        # Log the exception
+        logging.error(f"Error during execution: {str(e)}")
+        raise
 
 
 def export_points_to_csv(points_data):

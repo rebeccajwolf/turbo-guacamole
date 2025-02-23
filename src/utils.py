@@ -227,6 +227,48 @@ DEFAULT_CONFIG: Config = Config(
 )
 
 
+def active_sleep(seconds: float) -> None:
+    """
+    Active sleep function that keeps the container alive by using small sleep intervals.
+    
+    Args:
+        seconds: Total number of seconds to sleep
+    """
+    end_time = time.time() + seconds
+    while time.time() < end_time:
+        # Sleep in 1-second intervals to maintain activity
+        time.sleep(1)
+
+
+def split_message(message: str, max_length: int = 1900) -> List[str]:
+    """Split a message into parts that fit within Discord's character limit"""
+    if len(message) <= max_length:
+        return [message]
+    
+    parts = []
+    current_part = ""
+    lines = message.split('\n')
+    
+    for line in lines:
+        if len(current_part) + len(line) + 1 <= max_length:
+            current_part += line + '\n'
+        else:
+            if current_part:
+                parts.append(current_part.rstrip())
+            current_part = line + '\n'
+    
+    if current_part:
+        parts.append(current_part.rstrip())
+    
+    # Add part numbers
+    total_parts = len(parts)
+    if total_parts > 1:
+        for i in range(total_parts):
+            parts[i] = f"[Part {i+1}/{total_parts}]\n{parts[i]}"
+    
+    return parts
+
+
 class Utils:
 
     def __init__(self, webdriver: WebDriver):
@@ -664,18 +706,76 @@ def loadConfig(
 
 
 def sendNotification(title: str, body: str, e: Exception = None) -> None:
-    if not CONFIG.apprise.enabled or (
-        e and not CONFIG.get("apprise.notify.uncaught-exception")
-    ):
-        return
-    apprise = Apprise()
-    urls: list[str] = CONFIG.apprise.urls
-    if not urls:
-        logging.debug("No urls found, not sending notification")
-        return
-    for url in urls:
-        apprise.add(url)
-    assert apprise.notify(title=str(title), body=str(body))
+    try:
+        if not CONFIG.apprise.enabled or (
+            e and not CONFIG.get("apprise.notify.uncaught-exception")
+        ):
+            return
+        apprise = Apprise()
+        urls: list[str] = CONFIG.apprise.urls
+        if not urls:
+            logging.debug("No urls found, not sending notification")
+            return
+        # Format the message for Discord
+        formatted_body = body
+        has_discord = any(url.startswith("discord://") for url in urls)
+        
+        if has_discord:
+            # Escape Discord markdown characters
+            formatted_body = formatted_body.replace("_", "\\_").replace("*", "\\*").replace("`", "\\`")
+            
+            # Add code block formatting for error messages if there's an exception
+            if e is not None:
+                formatted_body = f"```\n{formatted_body}\n```"
+
+        # Add all configured notification URLs
+        for url in urls:
+            try:
+                apprise.add(url)
+            except Exception as add_error:
+                logging.error(f"Failed to add notification URL: {str(add_error)}")
+                continue
+
+        # Split message into parts if it's too long for Discord
+        message_parts = [formatted_body]
+        if has_discord:
+            message_parts = split_message(formatted_body)
+
+        # Send each part with retries
+        for part_num, message_part in enumerate(message_parts, 1):
+            part_title = title
+            if len(message_parts) > 1:
+                part_title = f"{title} (Part {part_num}/{len(message_parts)})"
+
+            # Attempt to send notification with retries
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    notification_result = apprise.notify(
+                        title=str(part_title),
+                        body=message_part
+                    )
+
+                    if notification_result:
+                        logging.info(f"Notification part {part_num}/{len(message_parts)} sent successfully")
+                        break
+                    else:
+                        logging.error(f"Failed to send notification part {part_num} - attempt {attempt + 1}/{max_retries}")
+                        if attempt < max_retries - 1:
+                            time.sleep(2 ** attempt)  # Exponential backoff
+                except Exception as notify_error:
+                    logging.error(f"Error sending notification part {part_num} (attempt {attempt + 1}/{max_retries}): {str(notify_error)}")
+                    if attempt < max_retries - 1:
+                        time.sleep(2 ** attempt)
+                        continue
+                    raise
+
+            # Add a small delay between parts to avoid rate limiting
+            if part_num < len(message_parts):
+                time.sleep(1)
+
+    except Exception as e:
+        logging.error(f"Fatal error in sendNotification: {str(e)}")
 
 
 def getAnswerCode(key: str, string: str) -> str:

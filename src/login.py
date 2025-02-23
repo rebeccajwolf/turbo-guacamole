@@ -14,7 +14,7 @@ from undetected_chromedriver import Chrome
 
 from src.browser import Browser
 from src.utils import sendNotification, CONFIG
-
+from exceptions import *
 
 class Login:
     browser: Browser
@@ -45,8 +45,9 @@ class Login:
         try:
             if element.is_displayed():
                 logging.critical("This Account is Locked!")
-                self.webdriver.close()
-                raise Exception("Account locked, moving to the next account.")
+                # self.webdriver.close()
+                # raise Exception("Account locked, moving to the next account.")
+                raise AccountLockedException
         except (ElementNotInteractableException, NoSuchElementException):
             pass
 
@@ -54,8 +55,9 @@ class Login:
         try:
             if element.is_displayed():
                 logging.critical("This Account is Banned!")
-                self.webdriver.close()
-                raise Exception("Account banned, moving to the next account.")
+                # self.webdriver.close()
+                # raise Exception("Account banned, moving to the next account.")
+                raise AccountSuspendedException
         except (ElementNotInteractableException, NoSuchElementException):
             pass
 
