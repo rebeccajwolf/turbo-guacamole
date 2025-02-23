@@ -12,6 +12,7 @@ from typing import Any, Self
 from copy import deepcopy
 
 import requests
+import os
 import yaml
 from apprise import Apprise
 from requests import Session
@@ -593,11 +594,57 @@ def createEmptyConfig(configPath: Path, config: Config) -> None:
     )
     exit(0)
 
+def update_config_from_env():
+    """Updates config.yaml with environment variables ACCOUNTS and TOKEN"""
+    config_path = getProjectRoot() / "config.yaml"
+    
+    try:
+        # Read existing config
+        with open(config_path, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        # Update accounts from ACCOUNTS env var
+        accounts_env = os.getenv('ACCOUNTS')
+        if accounts_env:
+            # Clear existing accounts
+            config['accounts'] = []
+            
+            # Parse accounts string and update config
+            account_pairs = accounts_env.split(',')
+            for pair in account_pairs:
+                email, password = pair.split(':')
+                config['accounts'].append({
+                    'email': email.strip(),
+                    'password': password.strip()
+                })
+            logging.info(f"Updated {len(account_pairs)} accounts from environment")
+        
+        # Update Discord webhook from TOKEN env var
+        token_env = os.getenv('TOKEN')
+        if token_env:
+            if not config.get('apprise'):
+                config['apprise'] = {}
+            if not config['apprise'].get('urls'):
+                config['apprise']['urls'] = []
+            
+            # Clear existing urls and add new token
+            config['apprise']['urls'] = [token_env]
+            logging.info("Updated Discord webhook URL from environment")
+        
+        # Write updated config back to file
+        with open(config_path, 'w') as file:
+            yaml.safe_dump(config, file, default_flow_style=False)
+            
+    except Exception as e:
+        logging.error(f"Failed to update config from environment: {str(e)}")
+        raise
+
 
 def loadConfig(
     configFilename="config.yaml", defaultConfig=DEFAULT_CONFIG
 ) -> Config:
     args = argumentParser()
+    update_config_from_env()
     if args.config:
         configFile = Path(args.config)
     else:

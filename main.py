@@ -11,7 +11,6 @@ import os
 import wget
 import zipfile
 import shutil
-import yaml
 from datetime import datetime
 from enum import Enum, auto
 from threading import Thread, Event
@@ -28,50 +27,7 @@ from src.browser import RemainingSearches
 from src.loggingColoredFormatter import ColoredFormatter
 from src.utils import CONFIG, sendNotification, getProjectRoot, formatNumber
 
-def update_config_from_env():
-	"""Updates config.yaml with environment variables ACCOUNTS and TOKEN"""
-	config_path = getProjectRoot() / "config.yaml"
-	
-	try:
-		# Read existing config
-		with open(config_path, 'r') as file:
-			config = yaml.safe_load(file)
-		
-		# Update accounts from ACCOUNTS env var
-		accounts_env = os.getenv('ACCOUNTS')
-		if accounts_env:
-			# Clear existing accounts
-			config['accounts'] = []
-			
-			# Parse accounts string and update config
-			account_pairs = accounts_env.split(',')
-			for pair in account_pairs:
-				email, password = pair.split(':')
-				config['accounts'].append({
-					'email': email.strip(),
-					'password': password.strip()
-				})
-			logging.info(f"Updated {len(account_pairs)} accounts from environment")
-		
-		# Update Discord webhook from TOKEN env var
-		token_env = os.getenv('TOKEN')
-		if token_env:
-			if not config.get('apprise'):
-				config['apprise'] = {}
-			if not config['apprise'].get('urls'):
-				config['apprise']['urls'] = []
-			
-			# Clear existing urls and add new token
-			config['apprise']['urls'] = [token_env]
-			logging.info("Updated Discord webhook URL from environment")
-		
-		# Write updated config back to file
-		with open(config_path, 'w') as file:
-			yaml.safe_dump(config, file, default_flow_style=False)
-			
-	except Exception as e:
-		logging.error(f"Failed to update config from environment: {str(e)}")
-		raise
+
 
 def main():
 	# setupLogging()
@@ -414,9 +370,6 @@ def main_with_schedule():
 		# Initial setup
 		setupLogging()
 		logging.info("Starting application...")
-
-		# Update config from environment variables
-		update_config_from_env()
 
 		downloadWebDriver()
 		
