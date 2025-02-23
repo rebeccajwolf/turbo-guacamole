@@ -8,6 +8,7 @@ from argparse import Namespace, ArgumentParser
 from datetime import date
 from pathlib import Path
 import random
+import schedule
 from typing import Any, List, Self
 from copy import deepcopy
 
@@ -238,6 +239,30 @@ def active_sleep(seconds: float) -> None:
 	while time.time() < end_time:
 		# Sleep in 1-second intervals to maintain activity
 		time.sleep(1)
+
+
+def scheduled_sleep(seconds: float) -> None:
+    """
+    Schedule a delay while maintaining sequential execution.
+    Uses the scheduler to keep the container alive during long delays.
+    
+    Args:
+        seconds: Total number of seconds to sleep
+    """
+    event_completed = False
+    
+    def mark_complete():
+        nonlocal event_completed
+        event_completed = True
+        return schedule.CancelJob
+        
+    # Schedule a one-time job after the delay
+    schedule.every(seconds).seconds.do(mark_complete)
+    
+    # Wait for the job to complete while keeping the container alive
+    while not event_completed:
+        schedule.run_pending()
+        time.sleep(1)
 
 
 def split_message(message: str, max_length: int = 1900) -> List[str]:
