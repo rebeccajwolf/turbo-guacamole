@@ -8,7 +8,7 @@ from argparse import Namespace, ArgumentParser
 from datetime import date
 from pathlib import Path
 import random
-from typing import Any, Self
+from typing import Any, List, Self
 from copy import deepcopy
 
 import requests
