@@ -395,6 +395,17 @@ def setup_schedule():
 	
 	logging.info(f"Scheduled jobs for {morning_time} and {evening_time}")
 
+def run_job_with_activity():
+	"""Priority-based job execution with container persistence"""
+	try:
+		main()
+	except Exception as e:
+		logging.exception("Job execution error")
+		sendNotification(
+			"⚠️ Error occurred, please check the log",
+			traceback.format_exc(),
+			e
+		)
 
 def main_with_schedule():
 	"""Main function with proper schedule handling"""
@@ -406,17 +417,7 @@ def main_with_schedule():
 		downloadWebDriver()
 		
 		# Run initial job
-		try:
-			
-			main()
-			
-		except Exception as e:
-			logging.exception("Job execution error")
-			sendNotification(
-				"⚠️ Error occurred, please check the log",
-				traceback.format_exc(),
-				e
-			)
+		run_job_with_activity()
 		
 		# Set up and start scheduler
 		setup_schedule()
