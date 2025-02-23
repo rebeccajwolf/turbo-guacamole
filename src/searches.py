@@ -13,7 +13,7 @@ import requests
 from selenium.webdriver.common.by import By
 
 from src.browser import Browser
-from src.utils import CONFIG, makeRequestsSession, getProjectRoot, scheduled_sleep
+from src.utils import CONFIG, makeRequestsSession, getProjectRoot, active_sleep
 
 
 class RetriesStrategy(Enum):
@@ -167,7 +167,7 @@ class Searches:
                     f"[BING] Search attempt not counted {i}/{Searches.maxRetries}, sleeping {sleepTime}"
                     f" seconds..."
                 )
-                scheduled_sleep(sleepTime)
+                active_sleep(sleepTime)
 
             searchbar = self.browser.utils.waitUntilClickable(
                 By.ID, "sb_form_q", timeToWait=40
@@ -182,7 +182,7 @@ class Searches:
 
             pointsAfter = self.browser.utils.getAccountPoints()
             if pointsBefore < pointsAfter:
-                scheduled_sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+                active_sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
                 return
 
             # todo

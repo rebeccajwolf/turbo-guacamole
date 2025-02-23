@@ -9,6 +9,7 @@ from datetime import date
 from pathlib import Path
 import random
 import schedule
+from threading import Event, Thread
 from typing import Any, List, Self
 from copy import deepcopy
 
@@ -228,41 +229,102 @@ DEFAULT_CONFIG: Config = Config(
 )
 
 
+class ActiveSleepManager:
+    def __init__(self):
+        self.running = True
+        self.stop_event = Event()
+        self._schedule_thread = None
+
+    def start(self):
+        """Start the schedule manager"""
+        self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
+        self._schedule_thread.start()
+
+    def stop(self):
+        """Stop the schedule manager gracefully"""
+        self.running = False
+        self.stop_event.set()
+        if self._schedule_thread:
+            self._schedule_thread.join(timeout=5)
+
+    def _run_schedule(self):
+        """Run the schedule loop with proper error handling"""
+        while self.running and not self.stop_event.is_set():
+            try:
+                schedule.run_pending()
+                self.stop_event.wait(timeout=1)
+            except Exception as e:
+                logging.error(f"Schedule error: {str(e)}")
+                time.sleep(1)
+
 def active_sleep(seconds: float) -> None:
-	"""
-	Active sleep function that keeps the container alive by using small sleep intervals.
-	
-	Args:
-		seconds: Total number of seconds to sleep
-	"""
-	end_time = time.time() + seconds
-	while time.time() < end_time:
-		# Sleep in 1-second intervals to maintain activity
-		time.sleep(1)
-
-
-def scheduled_sleep(seconds: float) -> None:
     """
-    Schedule a delay while maintaining sequential execution.
-    Uses the scheduler to keep the container alive during long delays.
+    Active sleep function that uses the scheduler system to keep the container alive.
     
     Args:
         seconds: Total number of seconds to sleep
     """
-    event_completed = False
+    sleep_completed = False
+    manager = ActiveSleepManager()
     
     def mark_complete():
-        nonlocal event_completed
-        event_completed = True
+        nonlocal sleep_completed
+        sleep_completed = True
         return schedule.CancelJob
-        
-    # Schedule a one-time job after the delay
-    schedule.every(seconds).seconds.do(mark_complete)
     
-    # Wait for the job to complete while keeping the container alive
-    while not event_completed:
-        schedule.run_pending()
-        time.sleep(1)
+    try:
+        # Start the scheduler manager
+        manager.start()
+        
+        # Schedule the wake-up
+        schedule.every(seconds).seconds.do(mark_complete)
+        
+        # Wait until sleep is complete
+        while not sleep_completed:
+            time.sleep(1)
+            
+    finally:
+        # Cleanup
+        manager.stop()
+        schedule.clear()
+
+
+
+# def active_sleep(seconds: float) -> None:
+# 	"""
+# 	Active sleep function that keeps the container alive by using small sleep intervals.
+	
+# 	Args:
+# 		seconds: Total number of seconds to sleep
+# 	"""
+# 	end_time = time.time() + seconds
+# 	while time.time() < end_time:
+# 		# Sleep in 1-second intervals to maintain activity
+# 		time.sleep(1)
+
+
+# def scheduled_sleep(seconds: float) -> None:
+#     """
+#     Schedule a delay while maintaining sequential execution.
+#     Uses the scheduler to keep the container alive during long delays.
+    
+#     Args:
+#         seconds: Total number of seconds to sleep
+#     """
+#     event_completed = False
+    
+#     def mark_complete():
+#         nonlocal event_completed
+#         event_completed = True
+#         return schedule.CancelJob
+        
+#     # Schedule a one-time job after the delay
+#     schedule.every(seconds).seconds.do(mark_complete)
+    
+#     # Wait for the job to complete while keeping the container alive
+#     while not event_completed:
+#         schedule.run_pending()
+#         time.sleep(1)
 
 
 def split_message(message: str, max_length: int = 1900) -> List[str]:
