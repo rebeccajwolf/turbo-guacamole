@@ -288,33 +288,33 @@ def executeBot(currentAccount):
 
 		return accountPoints
 	except AccountLockedException:
-        sendNotification(
-            "Account Update",
-            "\n".join(
-                [
-                    f"👤 Account: {currentAccount.username}",
-                    f"Your account has been locked !",
-                    f"⚠️ Locked",
-                ]
-            ),
-        )
-        raise
-    except AccountSuspendedException:
-        sendNotification(
-            "Account Update",
-            "\n".join(
-                [
-                    f"👤 Account: {currentAccount.username}",
-                    f"Your account has been suspended !",
-                    f"❌ Suspended",
-                ]
-            ),
-        )
-        raise
-    except Exception as e:
-        # Log the exception
-        logging.error(f"Error during execution: {str(e)}")
-        raise
+		sendNotification(
+			"Account Update",
+			"\n".join(
+				[
+					f"👤 Account: {currentAccount.username}",
+					f"Your account has been locked !",
+					f"⚠️ Locked",
+				]
+			),
+		)
+		raise
+	except AccountSuspendedException:
+		sendNotification(
+			"Account Update",
+			"\n".join(
+				[
+					f"👤 Account: {currentAccount.username}",
+					f"Your account has been suspended !",
+					f"❌ Suspended",
+				]
+			),
+		)
+		raise
+	except Exception as e:
+		# Log the exception
+		logging.error(f"Error during execution: {str(e)}")
+		raise
 
 
 def export_points_to_csv(points_data):
