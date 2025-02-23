@@ -14,6 +14,7 @@ import shutil
 from datetime import datetime
 from enum import Enum, auto
 from threading import Thread, Event
+from pathlib import Path
 
 from src import (
 	Browser,
