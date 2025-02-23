@@ -644,7 +644,9 @@ def loadConfig(
     configFilename="config.yaml", defaultConfig=DEFAULT_CONFIG
 ) -> Config:
     args = argumentParser()
+
     update_config_from_env()
+    
     if args.config:
         configFile = Path(args.config)
     else:
