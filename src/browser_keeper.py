@@ -5,12 +5,10 @@ import time
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 
-from src.browser import Browser
-
 class BrowserKeeper:
     """Keeps browser connection alive during long sleep periods by creating and closing tabs"""
     
-    def __init__(self, browser: Browser):
+    def __init__(self, browser):
         self.browser = browser
         self.webdriver = browser.webdriver
         self.utils = browser.utils
