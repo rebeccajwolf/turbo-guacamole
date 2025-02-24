@@ -34,6 +34,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from urllib3 import Retry
 
 from .constants import REWARDS_URL, SEARCH_URL
+from src.browser_keeper import BrowserKeeper
 
 class Config(dict):
 	def __init__(self, *args, **kwargs):
@@ -232,13 +233,11 @@ DEFAULT_CONFIG: Config = Config(
 
 def active_sleep(seconds: float) -> None:
     """
-    Active sleep function that keeps the browser alive during sleep.
+    Active sleep function that keeps the browser alive during sleep by creating and closing tabs.
     
     Args:
         seconds: Total number of seconds to sleep
     """
-    from src.browser_keeper import BrowserKeeper
-    
     # Get the current browser instance
     browser = None
     frame = inspect.currentframe()
@@ -248,11 +247,14 @@ def active_sleep(seconds: float) -> None:
             if hasattr(instance, 'browser'):
                 browser = instance.browser
                 break
+            elif isinstance(instance, Browser):
+                browser = instance
+                break
         frame = frame.f_back
         
     if browser and hasattr(browser, 'webdriver'):
         # Use BrowserKeeper to maintain browser activity
-        keeper = BrowserKeeper(browser.webdriver, browser.utils)
+        keeper = BrowserKeeper(browser)
         try:
             keeper.start()
             end_time = time.time() + seconds
@@ -263,6 +265,7 @@ def active_sleep(seconds: float) -> None:
     else:
         # Fallback to simple sleep if no browser instance found
         time.sleep(seconds)
+
 
 
 # class ActiveSleepManager:
