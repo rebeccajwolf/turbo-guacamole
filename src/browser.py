@@ -109,6 +109,11 @@ class Browser:
 		options.add_argument('--disable-site-isolation-trials')
 		options.add_argument("--disable-setuid-sandbox")
 		options.add_argument("--no-zygote")
+		options.add_argument("--disable-notifications")
+		options.add_argument("--disable-popup-blocking")
+		options.add_argument("--no-first-run")
+		options.add_argument("--disable-fre")
+		options.add_argument("--no-default-browser-check")
 		options.page_load_strategy = "eager"
 
 		seleniumwireOptions: dict[str, Any] = {
