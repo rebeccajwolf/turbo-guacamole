@@ -10,6 +10,7 @@ from datetime import date
 from pathlib import Path
 import random
 import schedule
+from itertools import cycle
 from threading import Event, Thread
 from typing import Any, List, Self
 from copy import deepcopy
@@ -233,7 +234,7 @@ DEFAULT_CONFIG: Config = Config(
 
 def active_sleep(seconds: float) -> None:
     """
-    Active sleep function that keeps the browser alive by creating and closing tabs periodically.
+    Active sleep function that keeps the browser alive by loading pages periodically.
     Uses the existing browser instance to maintain connection.
     
     Args:
@@ -255,34 +256,35 @@ def active_sleep(seconds: float) -> None:
 
     if browser and hasattr(browser, 'webdriver'):
         try:
-            original_handle = browser.webdriver.current_window_handle
+            # Store original URL
+            original_url = browser.webdriver.current_url
             end_time = time.time() + seconds
+            
+            # List of URLs to cycle through
+            urls = [
+                'https://www.google.com',
+            ]
+            url_cycle = cycle(urls)
             
             while time.time() < end_time:
                 try:
-                    # Create new tab
-                    browser.webdriver.switch_to.new_window('tab')
-                    time.sleep(0.5)
+                    # Load next URL in cycle
+                    url = next(url_cycle)
+                    browser.webdriver.get(url)
                     
-                    # Close the new tab
-                    browser.webdriver.close()
-                    
-                    # Switch back to original tab
-                    browser.webdriver.switch_to.window(original_handle)
-                    
-                    # Sleep between iterations
-                    time.sleep(2)
+                    # Random sleep between page loads (2-4 seconds)
+                    time.sleep(random.uniform(2, 4))
                     
                 except Exception as e:
-                    logging.debug(f"Tab operation error: {str(e)}")
-                    # If error occurs, do a short sleep and continue
+                    logging.debug(f"Page load error: {str(e)}")
                     time.sleep(1)
-                    try:
-                        # Try to switch back to original handle
-                        browser.webdriver.switch_to.window(original_handle)
-                    except:
-                        pass
                     
+            # Return to original URL
+            try:
+                browser.webdriver.get(original_url)
+            except Exception as e:
+                logging.debug(f"Error returning to original URL: {str(e)}")
+                
         except Exception as e:
             logging.debug(f"Error during active sleep: {str(e)}")
             # Fall back to simple sleep for remaining time
