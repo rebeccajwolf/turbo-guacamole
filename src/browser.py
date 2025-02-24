@@ -100,6 +100,7 @@ class Browser:
 		options.add_argument("--enable-features=UseOzonePlatform")
 		options.add_argument("--ozone-platform=wayland")
 		options.add_argument("--enable-wayland-ime")
+		options.add_argument("--disable-background-networking")
 		options.add_argument('--disable-background-timer-throttling')
 		options.add_argument('--disable-backgrounding-occluded-windows')
 		options.add_argument('--disable-renderer-backgrounding')
