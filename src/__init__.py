@@ -5,3 +5,4 @@ from .punchCards import PunchCards
 from .readToEarn import ReadToEarn
 from .searches import Searches
 from .exceptions import *
+from .browser_keeper import BrowserKeeper
