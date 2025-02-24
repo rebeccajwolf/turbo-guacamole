@@ -107,6 +107,8 @@ class Browser:
 		options.add_argument('--disable-features=TranslateUI')
 		options.add_argument('--disable-features=IsolateOrigins,site-per-process')
 		options.add_argument('--disable-site-isolation-trials')
+		options.add_argument("--disable-setuid-sandbox")
+		options.add_argument("--no-zygote")
 		options.page_load_strategy = "eager"
 
 		seleniumwireOptions: dict[str, Any] = {
@@ -115,7 +117,10 @@ class Browser:
 	        "read_timeout": None,  # Never timeout
 	        "suppress_connection_errors": True,
 	        "pool_connections": 100,
-	        "pool_maxsize": 100
+	        "pool_maxsize": 100,
+	        "connection_keep_alive": True,
+	        "connection_retries": 5,
+	        "max_retries": 5
 	    }
 
 		if self.proxy:
