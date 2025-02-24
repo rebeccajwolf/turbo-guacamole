@@ -233,7 +233,8 @@ DEFAULT_CONFIG: Config = Config(
 
 def active_sleep(seconds: float) -> None:
     """
-    Active sleep function that keeps the browser alive during sleep by creating and closing tabs.
+    Active sleep function that keeps the browser alive by creating and closing tabs periodically.
+    Uses the existing browser instance to maintain connection.
     
     Args:
         seconds: Total number of seconds to sleep
@@ -251,30 +252,43 @@ def active_sleep(seconds: float) -> None:
                 browser = instance
                 break
         frame = frame.f_back
-        
+
     if browser and hasattr(browser, 'webdriver'):
-        # Use BrowserKeeper to maintain browser activity
-        keeper = BrowserKeeper(browser)
         try:
-            keeper.start()
+            original_handle = browser.webdriver.current_window_handle
             end_time = time.time() + seconds
+            
             while time.time() < end_time:
-                if not keeper._is_running:
-                    # If keeper stopped, fall back to simple sleep
-                    time.sleep(1)
-                else:
+                try:
+                    # Create new tab
+                    browser.webdriver.switch_to.new_window('tab')
                     time.sleep(0.5)
+                    
+                    # Close the new tab
+                    browser.webdriver.close()
+                    
+                    # Switch back to original tab
+                    browser.webdriver.switch_to.window(original_handle)
+                    
+                    # Sleep between iterations
+                    time.sleep(2)
+                    
+                except Exception as e:
+                    logging.debug(f"Tab operation error: {str(e)}")
+                    # If error occurs, do a short sleep and continue
+                    time.sleep(1)
+                    try:
+                        # Try to switch back to original handle
+                        browser.webdriver.switch_to.window(original_handle)
+                    except:
+                        pass
+                    
         except Exception as e:
             logging.debug(f"Error during active sleep: {str(e)}")
             # Fall back to simple sleep for remaining time
             remaining = max(0, end_time - time.time())
             if remaining > 0:
                 time.sleep(remaining)
-        finally:
-            try:
-                keeper.stop()
-            except Exception as e:
-                logging.debug(f"Error stopping keeper: {str(e)}")
     else:
         # Fallback to simple sleep if no browser instance found
         time.sleep(seconds)
