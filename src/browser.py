@@ -109,13 +109,13 @@ class Browser:
 		options.page_load_strategy = "eager"
 
 		seleniumwireOptions: dict[str, Any] = {
-        "verify_ssl": False,
-        "connection_timeout": None,  # Never timeout
-        "read_timeout": None,  # Never timeout
-        "suppress_connection_errors": True,
-        "pool_connections": 100,
-        "pool_maxsize": 100
-    }
+	        "verify_ssl": False,
+	        "connection_timeout": None,  # Never timeout
+	        "read_timeout": None,  # Never timeout
+	        "suppress_connection_errors": True,
+	        "pool_connections": 100,
+	        "pool_maxsize": 100
+	    }
 
 		if self.proxy:
 			# Setup proxy if provided
