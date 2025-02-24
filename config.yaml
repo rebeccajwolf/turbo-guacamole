@@ -48,7 +48,6 @@ activities:
     "What's for Thanksgiving dinner?": pumpkin pie recipe
     "Who won?": braves score
     "You can track your package": usps tracking
-    "Track your delivery": fedex tracking package order
 logging:
   level: DEBUG # Set to DEBUG, WARNING, ERROR or CRITICAL to change the level of displayed information in the terminal
     # See https://docs.python.org/3/library/logging.html#logging-levels. Can be overridden with command-line arguments.
