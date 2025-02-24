@@ -67,7 +67,7 @@ def main():
 				retry_count += 1
 				if retry_count < max_retries:
 					logging.error(
-						f"Error executing account {currentAccount.username} (attempt {retry_count}/{max_retries}): {str(e)}"
+						f"Error executing account {currentAccount.email} (attempt {retry_count}/{max_retries}): {str(e)}"
 					)
 					# Add exponential backoff
 					wait_time = 2 ** retry_count
@@ -75,10 +75,10 @@ def main():
 					time.sleep(wait_time)
 				else:
 					logging.error(
-						f"Failed to execute account {currentAccount.username} after {max_retries} attempts. Moving to next account."
+						f"Failed to execute account {currentAccount.email} after {max_retries} attempts. Moving to next account."
 					)
 				sendNotification(
-					f"⚠️ Error executing {currentAccount.username} after {max_retries} retries",
+					f"⚠️ Error executing {currentAccount.email} after {max_retries} retries",
 					traceback.format_exc(),
 					e1,
 				)
