@@ -259,12 +259,26 @@ def active_sleep(seconds: float) -> None:
             keeper.start()
             end_time = time.time() + seconds
             while time.time() < end_time:
-                time.sleep(1)
+                if not keeper._is_running:
+                    # If keeper stopped, fall back to simple sleep
+                    time.sleep(1)
+                else:
+                    time.sleep(0.5)
+        except Exception as e:
+            logging.debug(f"Error during active sleep: {str(e)}")
+            # Fall back to simple sleep for remaining time
+            remaining = max(0, end_time - time.time())
+            if remaining > 0:
+                time.sleep(remaining)
         finally:
-            keeper.stop()
+            try:
+                keeper.stop()
+            except Exception as e:
+                logging.debug(f"Error stopping keeper: {str(e)}")
     else:
         # Fallback to simple sleep if no browser instance found
         time.sleep(seconds)
+
 
 
 
