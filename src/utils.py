@@ -233,68 +233,70 @@ DEFAULT_CONFIG: Config = Config(
 
 
 def active_sleep(seconds: float) -> None:
-    """
-    Active sleep function that keeps the browser alive by loading pages periodically.
-    Uses the existing browser instance to maintain connection.
-    
-    Args:
-        seconds: Total number of seconds to sleep
-    """
-    # Get the current browser instance
-    browser = None
-    frame = inspect.currentframe()
-    while frame:
-        if 'self' in frame.f_locals:
-            instance = frame.f_locals['self']
-            if hasattr(instance, 'browser'):
-                browser = instance.browser
-                break
-            elif isinstance(instance, Browser):
-                browser = instance
-                break
-        frame = frame.f_back
+	"""
+	Active sleep function that keeps the browser alive by simulating user activity
+	and maintaining window focus.
+	
+	Args:
+		seconds: Total number of seconds to sleep
+	"""
+	# Get the current browser instance
+	browser = None
+	frame = inspect.currentframe()
+	while frame:
+		if 'self' in frame.f_locals:
+			instance = frame.f_locals['self']
+			if hasattr(instance, 'browser'):
+				browser = instance.browser
+				break
+			elif isinstance(instance, Browser):
+				browser = instance
+				break
+		frame = frame.f_back
 
-    if browser and hasattr(browser, 'webdriver'):
-        try:
-            # Store original URL
-            original_url = browser.webdriver.current_url
-            end_time = time.time() + seconds
-            
-            # List of URLs to cycle through
-            urls = [
-                'https://www.google.com',
-            ]
-            url_cycle = cycle(urls)
-            
-            while time.time() < end_time:
-                try:
-                    # Load next URL in cycle
-                    url = next(url_cycle)
-                    browser.webdriver.get(url)
-                    
-                    # Random sleep between page loads (2-4 seconds)
-                    time.sleep(random.uniform(2, 4))
-                    
-                except Exception as e:
-                    logging.debug(f"Page load error: {str(e)}")
-                    time.sleep(1)
-                    
-            # Return to original URL
-            try:
-                browser.webdriver.get(original_url)
-            except Exception as e:
-                logging.debug(f"Error returning to original URL: {str(e)}")
-                
-        except Exception as e:
-            logging.debug(f"Error during active sleep: {str(e)}")
-            # Fall back to simple sleep for remaining time
-            remaining = max(0, end_time - time.time())
-            if remaining > 0:
-                time.sleep(remaining)
-    else:
-        # Fallback to simple sleep if no browser instance found
-        time.sleep(seconds)
-
+	if browser and hasattr(browser, 'webdriver'):
+		try:
+			# Store original URL and window handle
+			original_url = browser.webdriver.current_url
+			original_handle = browser.webdriver.current_window_handle
+			end_time = time.time() + seconds
+			
+			# Create a BrowserKeeper instance to maintain activity
+			keeper = BrowserKeeper(browser)
+			keeper.start()
+			
+			try:
+				# Sleep in small intervals while keeping the browser active
+				while time.time() < end_time:
+					# Execute JavaScript to trigger window events
+					browser.webdriver.execute_script("""
+						window.dispatchEvent(new Event('focus'));
+						window.dispatchEvent(new Event('mousemove'));
+					""")
+					
+					# Small sleep between activities
+					time.sleep(1)
+					
+			finally:
+				# Clean up
+				keeper.stop()
+				
+				# Return to original state
+				try:
+					browser.webdriver.switch_to.window(original_handle)
+					browser.webdriver.get(original_url)
+				except Exception as e:
+					logging.debug(f"Error returning to original state: {str(e)}")
+					
+		except Exception as e:
+			logging.debug(f"Error during active sleep: {str(e)}")
+			# Fall back to simple sleep for remaining time
+			remaining = max(0, end_time - time.time())
+			if remaining > 0:
+				time.sleep(remaining)
+	else:
+		# Fallback to simple sleep if no browser instance found
+		time.sleep(seconds)
 
 
 
@@ -329,29 +331,29 @@ def active_sleep(seconds: float) -> None:
 # def active_sleep(seconds: float) -> None:
 #     """
 #     Active sleep function that uses the scheduler system to keep the container alive.
-    
+	
 #     Args:
 #         seconds: Total number of seconds to sleep
 #     """
 #     sleep_completed = False
 #     manager = ActiveSleepManager()
-    
+	
 #     def mark_complete():
 #         nonlocal sleep_completed
 #         sleep_completed = True
 #         return schedule.CancelJob
-    
+	
 #     try:
 #         # Start the scheduler manager
 #         manager.start()
-        
+		
 #         # Schedule the wake-up
 #         schedule.every(seconds).seconds.do(mark_complete)
-        
+		
 #         # Wait until sleep is complete
 #         while not sleep_completed:
 #             time.sleep(1)
-            
+			
 #     finally:
 #         # Cleanup
 #         manager.stop()
@@ -376,20 +378,20 @@ def active_sleep(seconds: float) -> None:
 #     """
 #     Schedule a delay while maintaining sequential execution.
 #     Uses the scheduler to keep the container alive during long delays.
-    
+	
 #     Args:
 #         seconds: Total number of seconds to sleep
 #     """
 #     event_completed = False
-    
+	
 #     def mark_complete():
 #         nonlocal event_completed
 #         event_completed = True
 #         return schedule.CancelJob
-        
+		
 #     # Schedule a one-time job after the delay
 #     schedule.every(seconds).seconds.do(mark_complete)
-    
+	
 #     # Wait for the job to complete while keeping the container alive
 #     while not event_completed:
 #         schedule.run_pending()
