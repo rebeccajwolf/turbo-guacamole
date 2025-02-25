@@ -233,7 +233,7 @@ class Browser:
 				"userAgentMetadata": self.userAgentMetadata,
 			},
 		)
-		driver.set_page_load_timeout(self.maxtimeout)
+		driver.set_page_load_timeout(self.maxtimeout+10)
 		return driver
 
 	def setupProfiles(self) -> Path:
