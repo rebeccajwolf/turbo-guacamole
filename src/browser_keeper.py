@@ -2,6 +2,7 @@ import logging
 import threading
 import queue
 import time
+from itertools import cycle
 from selenium.common.exceptions import WebDriverException, TimeoutException
 from selenium.webdriver.common.by import By
 
