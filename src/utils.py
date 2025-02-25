@@ -231,30 +231,30 @@ DEFAULT_CONFIG: Config = Config(
 )
 
 
-def active_sleep(seconds: float) -> None:
-	"""
-	Active sleep function that keeps the browser alive during sleep periods.
-	Uses the browser's active_sleep method to maintain connection.
+# def active_sleep(seconds: float) -> None:
+# 	"""
+# 	Active sleep function that keeps the browser alive during sleep periods.
+# 	Uses the browser's active_sleep method to maintain connection.
 	
-	Args:
-		seconds: Total number of seconds to sleep
-	"""
-	# Get the current browser instance
-	browser = None
-	frame = inspect.currentframe()
-	while frame:
-		if 'self' in frame.f_locals:
-			instance = frame.f_locals['self']
-			if hasattr(instance, 'browser'):
-				browser = instance.browser
-				break
-		frame = frame.f_back
+# 	Args:
+# 		seconds: Total number of seconds to sleep
+# 	"""
+# 	# Get the current browser instance
+# 	browser = None
+# 	frame = inspect.currentframe()
+# 	while frame:
+# 		if 'self' in frame.f_locals:
+# 			instance = frame.f_locals['self']
+# 			if hasattr(instance, 'browser'):
+# 				browser = instance.browser
+# 				break
+# 		frame = frame.f_back
 		
-	if browser:
-		browser.active_sleep(seconds)
-	else:
-		# Fallback to simple sleep if no browser instance found
-		time.sleep(seconds)
+# 	if browser:
+# 		browser.active_sleep(seconds)
+# 	else:
+# 		# Fallback to simple sleep if no browser instance found
+# 		time.sleep(seconds)
 
 
 # class ActiveSleepManager:
@@ -285,36 +285,36 @@ def active_sleep(seconds: float) -> None:
 #                 logging.error(f"Schedule error: {str(e)}")
 #                 time.sleep(1)
 
-# def active_sleep(seconds: float) -> None:
-#     """
-#     Active sleep function that uses the scheduler system to keep the container alive.
+def active_sleep(seconds: float) -> None:
+    """
+    Active sleep function that uses the scheduler system to keep the container alive.
 	
-#     Args:
-#         seconds: Total number of seconds to sleep
-#     """
-#     sleep_completed = False
-#     manager = ActiveSleepManager()
+    Args:
+        seconds: Total number of seconds to sleep
+    """
+    sleep_completed = False
+    manager = ActiveSleepManager()
 	
-#     def mark_complete():
-#         nonlocal sleep_completed
-#         sleep_completed = True
-#         return schedule.CancelJob
+    def mark_complete():
+        nonlocal sleep_completed
+        sleep_completed = True
+        return schedule.CancelJob
 	
-#     try:
-#         # Start the scheduler manager
-#         manager.start()
+    try:
+        # Start the scheduler manager
+        manager.start()
 		
-#         # Schedule the wake-up
-#         schedule.every(seconds).seconds.do(mark_complete)
+        # Schedule the wake-up
+        schedule.every(seconds).seconds.do(mark_complete)
 		
-#         # Wait until sleep is complete
-#         while not sleep_completed:
-#             time.sleep(1)
+        # Wait until sleep is complete
+        while not sleep_completed:
+            time.sleep(1)
 			
-#     finally:
-#         # Cleanup
-#         manager.stop()
-#         schedule.clear()
+    finally:
+        # Cleanup
+        manager.stop()
+        schedule.clear()
 
 
 

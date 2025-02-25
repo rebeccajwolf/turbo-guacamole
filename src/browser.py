@@ -124,6 +124,8 @@ class Browser:
 		options.add_argument('--disable-background-timer-throttling')
 		options.add_argument('--disable-backgrounding-occluded-windows')
 		options.add_argument('--disable-renderer-backgrounding')
+		options.add_argument("--disable-tab-discarding")  # Prevent tab discarding
+		options.add_argument("--disable-tab-suspending")
 		options.page_load_strategy = "eager"
 
 		seleniumwireOptions: dict[str, Any] = {
@@ -226,7 +228,7 @@ class Browser:
 				"userAgentMetadata": self.userAgentMetadata,
 			},
 		)
-		driver.set_page_load_timeout(self.maxtimeout+10)
+
 		return driver
 
 	def setupProfiles(self) -> Path:
