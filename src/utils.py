@@ -257,33 +257,33 @@ DEFAULT_CONFIG: Config = Config(
 # 		time.sleep(seconds)
 
 
-# class ActiveSleepManager:
-#     def __init__(self):
-#         self.running = True
-#         self.stop_event = Event()
-#         self._schedule_thread = None
+class ActiveSleepManager:
+    def __init__(self):
+        self.running = True
+        self.stop_event = Event()
+        self._schedule_thread = None
 
-#     def start(self):
-#         """Start the schedule manager"""
-#         self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
-#         self._schedule_thread.start()
+    def start(self):
+        """Start the schedule manager"""
+        self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
+        self._schedule_thread.start()
 
-#     def stop(self):
-#         """Stop the schedule manager gracefully"""
-#         self.running = False
-#         self.stop_event.set()
-#         if self._schedule_thread:
-#             self._schedule_thread.join(timeout=5)
+    def stop(self):
+        """Stop the schedule manager gracefully"""
+        self.running = False
+        self.stop_event.set()
+        if self._schedule_thread:
+            self._schedule_thread.join(timeout=5)
 
-#     def _run_schedule(self):
-#         """Run the schedule loop with proper error handling"""
-#         while self.running and not self.stop_event.is_set():
-#             try:
-#                 schedule.run_pending()
-#                 self.stop_event.wait(timeout=1)
-#             except Exception as e:
-#                 logging.error(f"Schedule error: {str(e)}")
-#                 time.sleep(1)
+    def _run_schedule(self):
+        """Run the schedule loop with proper error handling"""
+        while self.running and not self.stop_event.is_set():
+            try:
+                schedule.run_pending()
+                self.stop_event.wait(timeout=1)
+            except Exception as e:
+                logging.error(f"Schedule error: {str(e)}")
+                time.sleep(1)
 
 def active_sleep(seconds: float) -> None:
     """
