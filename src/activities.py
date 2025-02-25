@@ -9,7 +9,7 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from src.browser import Browser
 from src.constants import REWARDS_URL
-from src.utils import CONFIG, sendNotification, getAnswerCode
+from src.utils import CONFIG, sendNotification, getAnswerCode, active_sleep
 
 
 class Activities:
@@ -190,7 +190,7 @@ class Activities:
         except Exception:
             logging.error(f"[ACTIVITY] Error doing {activityTitle}", exc_info=True)
         logging.debug(f"Entering Sleep after Activity")
-        sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+        active_sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
         logging.debug(f"Finished Sleep after Activity")
         self.browser.utils.resetTabs()
 
