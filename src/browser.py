@@ -58,20 +58,20 @@ class Browser:
 		self.browser_keeper = BrowserKeeper(self)
 		logging.debug("out __init__")
 
-	def active_sleep(self, seconds: float) -> None:
-		"""
-		Keep browser active during sleep periods by maintaining connection
-		"""
-		try:
-			# Start browser keeper
-			self.browser_keeper.start()
+	# def active_sleep(self, seconds: float) -> None:
+	# 	"""
+	# 	Keep browser active during sleep periods by maintaining connection
+	# 	"""
+	# 	try:
+	# 		# Start browser keeper
+	# 		self.browser_keeper.start()
 			
-			# Sleep for specified duration
-			time.sleep(seconds)
+	# 		# Sleep for specified duration
+	# 		time.sleep(seconds)
 			
-		finally:
-			# Stop browser keeper
-			self.browser_keeper.stop()
+	# 	finally:
+	# 		# Stop browser keeper
+	# 		self.browser_keeper.stop()
 
 
 	def __enter__(self):
