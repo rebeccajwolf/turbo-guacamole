@@ -35,7 +35,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from urllib3 import Retry
 
 from .constants import REWARDS_URL, SEARCH_URL
-from src.browser import Browser
+from .browser import Browser
 
 class Config(dict):
 	def __init__(self, *args, **kwargs):
