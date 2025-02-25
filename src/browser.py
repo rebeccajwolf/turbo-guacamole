@@ -19,6 +19,7 @@ from selenium.webdriver.chrome.webdriver import WebDriver
 from src import RemainingSearches
 from src.userAgentGenerator import GenerateUserAgent
 from src.utils import CONFIG, Utils, getBrowserConfig, getProjectRoot, saveBrowserConfig
+from src.browser_keeper import BrowserKeeper
 
 
 class Browser:
@@ -53,7 +54,23 @@ class Browser:
 			saveBrowserConfig(self.userDataDir, self.browserConfig)
 		self.webdriver = self.browserSetup()
 		self.utils = Utils(self.webdriver)
+		self.browser_keeper = BrowserKeeper(self)
 		logging.debug("out __init__")
+
+	def active_sleep(self, seconds: float) -> None:
+		"""
+		Keep browser active during sleep periods by maintaining connection
+		"""
+		try:
+			# Start browser keeper
+			self.browser_keeper.start()
+			
+			# Sleep for specified duration
+			time.sleep(seconds)
+			
+		finally:
+			# Stop browser keeper
+			self.browser_keeper.stop()
 
 	def __enter__(self):
 		logging.debug("in __enter__")
@@ -69,9 +86,12 @@ class Browser:
 		logging.debug(
 			f"in __exit__ exc_type={exc_type} exc_value={exc_value} traceback={traceback}"
 		)
-		# turns out close is needed for undetected_chromedriver
-		self.webdriver.close()
-		self.webdriver.quit()
+		try:
+			if self.browser_keeper:
+				self.browser_keeper.stop()
+		finally:
+			self.webdriver.close()
+			self.webdriver.quit()
 
 	def browserSetup(
 		self,
@@ -226,49 +246,6 @@ class Browser:
 		)
 
 		return driver
-
-	def active_sleep(self, seconds: float) -> None:
-		"""
-		Keep browser active during sleep periods by creating and closing tabs
-		
-		Args:
-			seconds: Number of seconds to maintain activity
-		"""
-		try:
-			original_url = self.webdriver.current_url
-			original_handle = self.webdriver.current_window_handle
-			end_time = time.time() + seconds
-			
-			while time.time() < end_time:
-				try:
-					# Create new tab
-					self.webdriver.switch_to.new_window('tab')
-					time.sleep(1)
-					
-					# Close the tab
-					self.webdriver.close()
-					
-					# Switch back to original tab
-					self.webdriver.switch_to.window(original_handle)
-					
-					# Small delay between cycles
-					time.sleep(2)
-					
-				except Exception as e:
-					logging.debug(f"Error during active sleep cycle: {str(e)}")
-					break
-					
-		except Exception as e:
-			logging.debug(f"Error in active sleep: {str(e)}")
-			time.sleep(seconds)  # Fallback to regular sleep
-			
-		finally:
-			try:
-				# Ensure we're back on the original tab and URL
-				self.webdriver.switch_to.window(original_handle)
-				self.webdriver.get(original_url)
-			except Exception as e:
-				logging.debug(f"Error restoring browser state: {str(e)}")
 
 	def setupProfiles(self) -> Path:
 		"""
