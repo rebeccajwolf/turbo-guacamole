@@ -35,6 +35,7 @@ class Browser:
 		self.mobile = mobile
 		self.browserType = "mobile" if mobile else "desktop"
 		self.headless = not CONFIG.browser.visible
+		self.maxtimeout = CONFIG.cooldown.max
 		self.email = account.email
 		self.password = account.password
 		self.totp = account.get('totp')
@@ -232,7 +233,7 @@ class Browser:
 				"userAgentMetadata": self.userAgentMetadata,
 			},
 		)
-
+		driver.set_page_load_timeout(self.maxtimeout)
 		return driver
 
 	def setupProfiles(self) -> Path:
