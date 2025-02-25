@@ -232,29 +232,29 @@ DEFAULT_CONFIG: Config = Config(
 
 
 def active_sleep(seconds: float) -> None:
-    """
-    Active sleep function that keeps the browser alive during sleep periods.
-    Uses the browser's active_sleep method to maintain connection.
-    
-    Args:
-        seconds: Total number of seconds to sleep
-    """
-    # Get the current browser instance
-    browser = None
-    frame = inspect.currentframe()
-    while frame:
-        if 'self' in frame.f_locals:
-            instance = frame.f_locals['self']
-            if hasattr(instance, 'browser'):
-                browser = instance.browser
-                break
-        frame = frame.f_back
-        
-    if browser:
-        browser.active_sleep(seconds)
-    else:
-        # Fallback to simple sleep if no browser instance found
-        time.sleep(seconds)
+	"""
+	Active sleep function that keeps the browser alive during sleep periods.
+	Uses the browser's active_sleep method to maintain connection.
+	
+	Args:
+		seconds: Total number of seconds to sleep
+	"""
+	# Get the current browser instance
+	browser = None
+	frame = inspect.currentframe()
+	while frame:
+		if 'self' in frame.f_locals:
+			instance = frame.f_locals['self']
+			if hasattr(instance, 'browser'):
+				browser = instance.browser
+				break
+		frame = frame.f_back
+		
+	if browser:
+		browser.active_sleep(seconds)
+	else:
+		# Fallback to simple sleep if no browser instance found
+		time.sleep(seconds)
 
 
 # class ActiveSleepManager:

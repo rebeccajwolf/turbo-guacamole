@@ -58,19 +58,19 @@ class Browser:
 		logging.debug("out __init__")
 
 	def active_sleep(self, seconds: float) -> None:
-	    """
-	    Keep browser active during sleep periods by maintaining connection
-	    """
-	    try:
-	        # Start browser keeper
-	        self.browser_keeper.start()
-	        
-	        # Sleep for specified duration
-	        time.sleep(seconds)
-	        
-	    finally:
-	        # Stop browser keeper
-	        self.browser_keeper.stop()
+		"""
+		Keep browser active during sleep periods by maintaining connection
+		"""
+		try:
+			# Start browser keeper
+			self.browser_keeper.start()
+			
+			# Sleep for specified duration
+			time.sleep(seconds)
+			
+		finally:
+			# Stop browser keeper
+			self.browser_keeper.stop()
 
 
 	def __enter__(self):
@@ -117,12 +117,12 @@ class Browser:
 		options.add_argument("--disable-search-engine-choice-screen")  # 153
 		options.add_argument("--disable-component-update")
 		options.add_argument("--ozone-platform=wayland")
-	    options.add_argument("--enable-wayland-ime")
-	    options.add_argument("--enable-features=UseOzonePlatform")
-	    options.add_argument("--disable-background-networking")
-	    options.add_argument('--disable-background-timer-throttling')
-	    options.add_argument('--disable-backgrounding-occluded-windows')
-	    options.add_argument('--disable-renderer-backgrounding')
+		options.add_argument("--enable-wayland-ime")
+		options.add_argument("--enable-features=UseOzonePlatform")
+		options.add_argument("--disable-background-networking")
+		options.add_argument('--disable-background-timer-throttling')
+		options.add_argument('--disable-backgrounding-occluded-windows')
+		options.add_argument('--disable-renderer-backgrounding')
 		options.page_load_strategy = "eager"
 
 		seleniumwireOptions: dict[str, Any] = {
