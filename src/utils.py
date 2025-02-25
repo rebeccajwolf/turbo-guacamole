@@ -35,7 +35,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from urllib3 import Retry
 
 from .constants import REWARDS_URL, SEARCH_URL
-from src.browser_keeper import BrowserKeeper
+from src.browser import Browser
 
 class Config(dict):
 	def __init__(self, *args, **kwargs):
@@ -234,13 +234,13 @@ DEFAULT_CONFIG: Config = Config(
 
 def active_sleep(seconds: float) -> None:
 	"""
-	Active sleep function that keeps the browser alive by simulating user activity
-	and maintaining window focus.
+	Active sleep function that uses the browser's active_sleep method
+	to maintain activity during sleep periods.
 	
 	Args:
 		seconds: Total number of seconds to sleep
 	"""
-	# Get the current browser instance
+	# Get the browser instance from the current context
 	browser = None
 	frame = inspect.currentframe()
 	while frame:
@@ -249,53 +249,12 @@ def active_sleep(seconds: float) -> None:
 			if hasattr(instance, 'browser'):
 				browser = instance.browser
 				break
-			elif isinstance(instance, Browser):
-				browser = instance
-				break
 		frame = frame.f_back
-
-	if browser and hasattr(browser, 'webdriver'):
-		try:
-			# Store original URL and window handle
-			original_url = browser.webdriver.current_url
-			original_handle = browser.webdriver.current_window_handle
-			end_time = time.time() + seconds
-			
-			# Create a BrowserKeeper instance to maintain activity
-			keeper = BrowserKeeper(browser)
-			keeper.start()
-			
-			try:
-				# Sleep in small intervals while keeping the browser active
-				while time.time() < end_time:
-					# Execute JavaScript to trigger window events
-					browser.webdriver.execute_script("""
-						window.dispatchEvent(new Event('focus'));
-						window.dispatchEvent(new Event('mousemove'));
-					""")
-					
-					# Small sleep between activities
-					time.sleep(1)
-					
-			finally:
-				# Clean up
-				keeper.stop()
-				
-				# Return to original state
-				try:
-					browser.webdriver.switch_to.window(original_handle)
-					browser.webdriver.get(original_url)
-				except Exception as e:
-					logging.debug(f"Error returning to original state: {str(e)}")
-					
-		except Exception as e:
-			logging.debug(f"Error during active sleep: {str(e)}")
-			# Fall back to simple sleep for remaining time
-			remaining = max(0, end_time - time.time())
-			if remaining > 0:
-				time.sleep(remaining)
+		
+	if browser and isinstance(browser, Browser):
+		browser.active_sleep(seconds)
 	else:
-		# Fallback to simple sleep if no browser instance found
+		# Fallback to regular sleep if no browser instance found
 		time.sleep(seconds)
 
 

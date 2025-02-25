@@ -3,6 +3,7 @@ import locale
 import logging
 import os
 import random
+import time
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Type
@@ -225,6 +226,49 @@ class Browser:
 		)
 
 		return driver
+
+	def active_sleep(self, seconds: float) -> None:
+		"""
+		Keep browser active during sleep periods by creating and closing tabs
+		
+		Args:
+			seconds: Number of seconds to maintain activity
+		"""
+		try:
+			original_url = self.webdriver.current_url
+			original_handle = self.webdriver.current_window_handle
+			end_time = time.time() + seconds
+			
+			while time.time() < end_time:
+				try:
+					# Create new tab
+					self.webdriver.switch_to.new_window('tab')
+					time.sleep(1)
+					
+					# Close the tab
+					self.webdriver.close()
+					
+					# Switch back to original tab
+					self.webdriver.switch_to.window(original_handle)
+					
+					# Small delay between cycles
+					time.sleep(2)
+					
+				except Exception as e:
+					logging.debug(f"Error during active sleep cycle: {str(e)}")
+					break
+					
+		except Exception as e:
+			logging.debug(f"Error in active sleep: {str(e)}")
+			time.sleep(seconds)  # Fallback to regular sleep
+			
+		finally:
+			try:
+				# Ensure we're back on the original tab and URL
+				self.webdriver.switch_to.window(original_handle)
+				self.webdriver.get(original_url)
+			except Exception as e:
+				logging.debug(f"Error restoring browser state: {str(e)}")
 
 	def setupProfiles(self) -> Path:
 		"""
