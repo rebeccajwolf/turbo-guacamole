@@ -59,7 +59,7 @@ class Browser:
 		# self._stop_heartbeat = threading.Event()
 		# self._heartbeat_thread = None
 		# self._start_heartbeat()
-		self.browser_keeper = BrowserKeeper(self)
+		# self.browser_keeper = BrowserKeeper(self)
 		logging.debug("out __init__")
 
 	# def active_sleep(self, seconds: float) -> None:

@@ -231,111 +231,111 @@ DEFAULT_CONFIG: Config = Config(
 )
 
 
-class ActiveSleepManager:
-	def __init__(self):
-		self.running = True
-		self.stop_event = Event()
-		self._schedule_thread = None
+# class ActiveSleepManager:
+# 	def __init__(self):
+# 		self.running = True
+# 		self.stop_event = Event()
+# 		self._schedule_thread = None
 
-	def start(self):
-		"""Start the schedule manager"""
-		self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
-		self._schedule_thread.start()
+# 	def start(self):
+# 		"""Start the schedule manager"""
+# 		self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
+# 		self._schedule_thread.start()
 
-	def stop(self):
-		"""Stop the schedule manager gracefully"""
-		self.running = False
-		self.stop_event.set()
-		if self._schedule_thread:
-			self._schedule_thread.join(timeout=5)
+# 	def stop(self):
+# 		"""Stop the schedule manager gracefully"""
+# 		self.running = False
+# 		self.stop_event.set()
+# 		if self._schedule_thread:
+# 			self._schedule_thread.join(timeout=5)
 
-	def _run_schedule(self):
-		"""Run the schedule loop with proper error handling"""
-		while self.running and not self.stop_event.is_set():
-			try:
-				schedule.run_pending()
-				self.stop_event.wait(timeout=1)
-			except Exception as e:
-				logging.error(f"Schedule error: {str(e)}")
-				time.sleep(1)
+# 	def _run_schedule(self):
+# 		"""Run the schedule loop with proper error handling"""
+# 		while self.running and not self.stop_event.is_set():
+# 			try:
+# 				schedule.run_pending()
+# 				self.stop_event.wait(timeout=1)
+# 			except Exception as e:
+# 				logging.error(f"Schedule error: {str(e)}")
+# 				time.sleep(1)
 
-def active_sleep(seconds: float) -> None:
-	"""
-	Active sleep function that uses the browser keeper to maintain connection.
+# def active_sleep(seconds: float) -> None:
+# 	"""
+# 	Active sleep function that uses the browser keeper to maintain connection.
 	
-	Args:
-		seconds: Total number of seconds to sleep
-	"""
-	# Get the current browser instance
-	browser = None
-	frame = inspect.currentframe()
-	while frame:
-		if 'self' in frame.f_locals:
-			instance = frame.f_locals['self']
-			if hasattr(instance, 'browser'):
-				browser = instance.browser
-				break
-		frame = frame.f_back
+# 	Args:
+# 		seconds: Total number of seconds to sleep
+# 	"""
+# 	# Get the current browser instance
+# 	browser = None
+# 	frame = inspect.currentframe()
+# 	while frame:
+# 		if 'self' in frame.f_locals:
+# 			instance = frame.f_locals['self']
+# 			if hasattr(instance, 'browser'):
+# 				browser = instance.browser
+# 				break
+# 		frame = frame.f_back
 	
-	if browser and hasattr(browser, 'browser_keeper'):
-		try:
-			# Start browser keeper
-			browser.browser_keeper.start()
+# 	if browser and hasattr(browser, 'browser_keeper'):
+# 		try:
+# 			# Start browser keeper
+# 			browser.browser_keeper.start()
 			
-			# Use scheduler for container activity
-			sleep_completed = False
-			manager = ActiveSleepManager()
+# 			# Use scheduler for container activity
+# 			sleep_completed = False
+# 			manager = ActiveSleepManager()
 			
-			def mark_complete():
-				nonlocal sleep_completed
-				sleep_completed = True
-				return schedule.CancelJob
+# 			def mark_complete():
+# 				nonlocal sleep_completed
+# 				sleep_completed = True
+# 				return schedule.CancelJob
 			
-			try:
-				# Start the scheduler manager
-				manager.start()
+# 			try:
+# 				# Start the scheduler manager
+# 				manager.start()
 				
-				# Schedule the wake-up
-				schedule.every(seconds).seconds.do(mark_complete)
+# 				# Schedule the wake-up
+# 				schedule.every(seconds).seconds.do(mark_complete)
 				
-				# Wait until sleep is complete
-				while not sleep_completed:
-					time.sleep(1)
+# 				# Wait until sleep is complete
+# 				while not sleep_completed:
+# 					time.sleep(1)
 					
-			finally:
-				# Cleanup
-				manager.stop()
-				schedule.clear()
+# 			finally:
+# 				# Cleanup
+# 				manager.stop()
+# 				schedule.clear()
 				
-		finally:
-			# Always stop browser keeper
-			if hasattr(browser, 'browser_keeper'):
-				browser.browser_keeper.stop()
-	else:
-		# Fallback to simple active sleep with scheduler
-		sleep_completed = False
-		manager = ActiveSleepManager()
+# 		finally:
+# 			# Always stop browser keeper
+# 			if hasattr(browser, 'browser_keeper'):
+# 				browser.browser_keeper.stop()
+# 	else:
+# 		# Fallback to simple active sleep with scheduler
+# 		sleep_completed = False
+# 		manager = ActiveSleepManager()
 		
-		def mark_complete():
-			nonlocal sleep_completed
-			sleep_completed = True
-			return schedule.CancelJob
+# 		def mark_complete():
+# 			nonlocal sleep_completed
+# 			sleep_completed = True
+# 			return schedule.CancelJob
 		
-		try:
-			# Start the scheduler manager
-			manager.start()
+# 		try:
+# 			# Start the scheduler manager
+# 			manager.start()
 			
-			# Schedule the wake-up
-			schedule.every(seconds).seconds.do(mark_complete)
+# 			# Schedule the wake-up
+# 			schedule.every(seconds).seconds.do(mark_complete)
 			
-			# Wait until sleep is complete
-			while not sleep_completed:
-				time.sleep(1)
+# 			# Wait until sleep is complete
+# 			while not sleep_completed:
+# 				time.sleep(1)
 				
-		finally:
-			# Cleanup
-			manager.stop()
-			schedule.clear()
+# 		finally:
+# 			# Cleanup
+# 			manager.stop()
+# 			schedule.clear()
 
 
 
@@ -366,64 +366,64 @@ def active_sleep(seconds: float) -> None:
 # 		time.sleep(seconds)
 
 
-# class ActiveSleepManager:
-#     def __init__(self):
-#         self.running = True
-#         self.stop_event = Event()
-#         self._schedule_thread = None
+class ActiveSleepManager:
+    def __init__(self):
+        self.running = True
+        self.stop_event = Event()
+        self._schedule_thread = None
 
-#     def start(self):
-#         """Start the schedule manager"""
-#         self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
-#         self._schedule_thread.start()
+    def start(self):
+        """Start the schedule manager"""
+        self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
+        self._schedule_thread.start()
 
-#     def stop(self):
-#         """Stop the schedule manager gracefully"""
-#         self.running = False
-#         self.stop_event.set()
-#         if self._schedule_thread:
-#             self._schedule_thread.join(timeout=5)
+    def stop(self):
+        """Stop the schedule manager gracefully"""
+        self.running = False
+        self.stop_event.set()
+        if self._schedule_thread:
+            self._schedule_thread.join(timeout=5)
 
-#     def _run_schedule(self):
-#         """Run the schedule loop with proper error handling"""
-#         while self.running and not self.stop_event.is_set():
-#             try:
-#                 schedule.run_pending()
-#                 self.stop_event.wait(timeout=1)
-#             except Exception as e:
-#                 logging.error(f"Schedule error: {str(e)}")
-#                 time.sleep(1)
+    def _run_schedule(self):
+        """Run the schedule loop with proper error handling"""
+        while self.running and not self.stop_event.is_set():
+            try:
+                schedule.run_pending()
+                self.stop_event.wait(timeout=1)
+            except Exception as e:
+                logging.error(f"Schedule error: {str(e)}")
+                time.sleep(1)
 
-# def active_sleep(seconds: float) -> None:
-#     """
-#     Active sleep function that uses the scheduler system to keep the container alive.
+def active_sleep(seconds: float) -> None:
+    """
+    Active sleep function that uses the scheduler system to keep the container alive.
 	
-#     Args:
-#         seconds: Total number of seconds to sleep
-#     """
-#     sleep_completed = False
-#     manager = ActiveSleepManager()
+    Args:
+        seconds: Total number of seconds to sleep
+    """
+    sleep_completed = False
+    manager = ActiveSleepManager()
 	
-#     def mark_complete():
-#         nonlocal sleep_completed
-#         sleep_completed = True
-#         return schedule.CancelJob
+    def mark_complete():
+        nonlocal sleep_completed
+        sleep_completed = True
+        return schedule.CancelJob
 	
-#     try:
-#         # Start the scheduler manager
-#         manager.start()
+    try:
+        # Start the scheduler manager
+        manager.start()
 		
-#         # Schedule the wake-up
-#         schedule.every(seconds).seconds.do(mark_complete)
+        # Schedule the wake-up
+        schedule.every(seconds).seconds.do(mark_complete)
 		
-#         # Wait until sleep is complete
-#         while not sleep_completed:
-#             time.sleep(1)
+        # Wait until sleep is complete
+        while not sleep_completed:
+            time.sleep(1)
 			
-#     finally:
-#         # Cleanup
-#         manager.stop()
-#         schedule.clear()
+    finally:
+        # Cleanup
+        manager.stop()
+        schedule.clear()
 
 
 

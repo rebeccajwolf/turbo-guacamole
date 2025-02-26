@@ -191,7 +191,7 @@ class Activities:
             logging.error(f"[ACTIVITY] Error doing {activityTitle}", exc_info=True)
         self.browser.utils.resetTabs()
         logging.debug(f"Entering Sleep after Activity")
-        active_sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+        sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
         logging.debug(f"Finished Sleep after Activity")
 
     def completeActivities(self):
