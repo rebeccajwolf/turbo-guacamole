@@ -56,9 +56,9 @@ class Browser:
 			saveBrowserConfig(self.userDataDir, self.browserConfig)
 		self.webdriver = self.browserSetup()
 		self.utils = Utils(self.webdriver)
-		self._stop_heartbeat = threading.Event()
-		self._heartbeat_thread = None
-		self._start_heartbeat()
+		# self._stop_heartbeat = threading.Event()
+		# self._heartbeat_thread = None
+		# self._start_heartbeat()
 		# self.browser_keeper = BrowserKeeper(self)
 		logging.debug("out __init__")
 
@@ -77,48 +77,48 @@ class Browser:
 	# 		# Stop browser keeper
 	# 		self.browser_keeper.stop()
 
-	def _start_heartbeat(self):
-		"""Start the heartbeat thread to keep the browser connection alive"""
-		self._stop_heartbeat.clear()
-		self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
-		self._heartbeat_thread.start()
+	# def _start_heartbeat(self):
+	# 	"""Start the heartbeat thread to keep the browser connection alive"""
+	# 	self._stop_heartbeat.clear()
+	# 	self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
+	# 	self._heartbeat_thread.start()
 		
-	def _heartbeat_loop(self):
-		"""Continuously send heartbeats to keep the browser connection alive"""
-		scripts = [
-			"return document.title;",
-			"return window.innerHeight;",
-			"return document.readyState;",
-			"return navigator.userAgent;",
-			"return new Date().toString();",
-			"return 1;",
-			"return window.location.href;",
-			"return document.documentElement.clientWidth;",
-			"return document.documentElement.clientHeight;",
-			"return window.performance.now();"
-		]
+	# def _heartbeat_loop(self):
+	# 	"""Continuously send heartbeats to keep the browser connection alive"""
+	# 	scripts = [
+	# 		"return document.title;",
+	# 		"return window.innerHeight;",
+	# 		"return document.readyState;",
+	# 		"return navigator.userAgent;",
+	# 		"return new Date().toString();",
+	# 		"return 1;",
+	# 		"return window.location.href;",
+	# 		"return document.documentElement.clientWidth;",
+	# 		"return document.documentElement.clientHeight;",
+	# 		"return window.performance.now();"
+	# 	]
 		
-		while not self._stop_heartbeat.is_set():
-			try:
-				# Execute a lightweight script
-				script = random.choice(scripts)
-				self.webdriver.execute_script(script)
+	# 	while not self._stop_heartbeat.is_set():
+	# 		try:
+	# 			# Execute a lightweight script
+	# 			script = random.choice(scripts)
+	# 			self.webdriver.execute_script(script)
 				
-				# Log heartbeat occasionally (every ~5 minutes)
-				if random.random() < 0.01:  # 1% chance each time
-					logging.debug("Browser heartbeat active")
+	# 			# Log heartbeat occasionally (every ~5 minutes)
+	# 			if random.random() < 0.01:  # 1% chance each time
+	# 				logging.debug("Browser heartbeat active")
 					
-				# Sleep for a short interval (5-10 seconds)
-				# Short enough to maintain connection but not flood with requests
-				sleep_time = random.uniform(5, 10)
+	# 			# Sleep for a short interval (5-10 seconds)
+	# 			# Short enough to maintain connection but not flood with requests
+	# 			sleep_time = random.uniform(5, 10)
 				
-				# Use wait with timeout to allow for responsive shutdown
-				self._stop_heartbeat.wait(timeout=sleep_time)
+	# 			# Use wait with timeout to allow for responsive shutdown
+	# 			self._stop_heartbeat.wait(timeout=sleep_time)
 				
-			except Exception as e:
-				# If we encounter an error, log it but don't stop the heartbeat
-				logging.debug(f"Heartbeat error (will retry): {str(e)}")
-				time.sleep(2)  # Short delay before retry
+	# 		except Exception as e:
+	# 			# If we encounter an error, log it but don't stop the heartbeat
+	# 			logging.debug(f"Heartbeat error (will retry): {str(e)}")
+	# 			time.sleep(2)  # Short delay before retry
 
 	def __enter__(self):
 		logging.debug("in __enter__")
@@ -134,9 +134,9 @@ class Browser:
 		logging.debug(
 			f"in __exit__ exc_type={exc_type} exc_value={exc_value} traceback={traceback}"
 		)
-		self._stop_heartbeat.set()
-		if self._heartbeat_thread:
-			self._heartbeat_thread.join(timeout=2)
+		# self._stop_heartbeat.set()
+		# if self._heartbeat_thread:
+		# 	self._heartbeat_thread.join(timeout=2)
 
 		self.webdriver.close()
 		self.webdriver.quit()
