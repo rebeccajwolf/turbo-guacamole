@@ -231,39 +231,39 @@ DEFAULT_CONFIG: Config = Config(
 )
 
 
-def active_sleep(seconds: float) -> None:
-	"""
-	Simple active sleep function that keeps the container alive
-	by using small sleep intervals and periodic logging.
+# def active_sleep(seconds: float) -> None:
+# 	"""
+# 	Simple active sleep function that keeps the container alive
+# 	by using small sleep intervals and periodic logging.
 	
-	Args:
-		seconds: Total number of seconds to sleep
-	"""
-	start_time = time.time()
-	end_time = start_time + seconds
+# 	Args:
+# 		seconds: Total number of seconds to sleep
+# 	"""
+# 	start_time = time.time()
+# 	end_time = start_time + seconds
 	
-	# Log initial sleep message
-	logging.debug(f"Starting sleep period of {seconds:.1f} seconds")
+# 	# Log initial sleep message
+# 	logging.debug(f"Starting sleep period of {seconds:.1f} seconds")
 	
-	# Sleep in small chunks to keep the container active
-	while time.time() < end_time:
-		# Sleep for a short interval (1-3 seconds)
-		chunk_sleep = min(random.uniform(1, 3), end_time - time.time())
-		if chunk_sleep <= 0:
-			break
-		time.sleep(chunk_sleep)
+# 	# Sleep in small chunks to keep the container active
+# 	while time.time() < end_time:
+# 		# Sleep for a short interval (1-3 seconds)
+# 		chunk_sleep = min(random.uniform(1, 3), end_time - time.time())
+# 		if chunk_sleep <= 0:
+# 			break
+# 		time.sleep(chunk_sleep)
 		
-		# Log progress periodically (roughly every minute)
-		elapsed = time.time() - start_time
-		remaining = end_time - time.time()
+# 		# Log progress periodically (roughly every minute)
+# 		elapsed = time.time() - start_time
+# 		remaining = end_time - time.time()
 		
-		if elapsed % 60 < 3 and remaining > 10:  # Log approximately every minute
-			progress_percent = (elapsed / seconds) * 100
-			logging.debug(f"Sleep progress: {elapsed:.1f}/{seconds:.1f}s ({progress_percent:.1f}%)")
+# 		if elapsed % 60 < 3 and remaining > 10:  # Log approximately every minute
+# 			progress_percent = (elapsed / seconds) * 100
+# 			logging.debug(f"Sleep progress: {elapsed:.1f}/{seconds:.1f}s ({progress_percent:.1f}%)")
 			
-		# Occasionally perform a small CPU operation to keep container active
-		if random.random() < 0.1:  # 10% chance each iteration
-			_ = sum(i * i for i in range(10))  # Minimal CPU activity
+# 		# Occasionally perform a small CPU operation to keep container active
+# 		if random.random() < 0.1:  # 10% chance each iteration
+# 			_ = sum(i * i for i in range(10))  # Minimal CPU activity
 
 
 
