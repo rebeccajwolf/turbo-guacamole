@@ -4,6 +4,7 @@ import logging
 import os
 import random
 import time
+import threading
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Type
@@ -227,6 +228,18 @@ class Browser:
 				"userAgentMetadata": self.userAgentMetadata,
 			},
 		)
+
+		 # Keep session alive with periodic script execution
+	    def session_keeper():
+	        while True:
+	            try:
+	                # Execute a lightweight script
+	                driver.execute_script("return 1;")
+	                time.sleep(30)  # Heartbeat interval
+	            except Exception:
+	                break
+	                
+	    threading.Thread(target=session_keeper, daemon=True).start()
 
 		return driver
 
