@@ -9,7 +9,7 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from src.browser import Browser
 from src.constants import REWARDS_URL
-from src.utils import CONFIG, sendNotification, getAnswerCode, active_sleep
+from src.utils import CONFIG, sendNotification, getAnswerCode
 
 
 class Activities:

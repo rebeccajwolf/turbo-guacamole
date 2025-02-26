@@ -13,7 +13,7 @@ import requests
 from selenium.webdriver.common.by import By
 
 from src.browser import Browser
-from src.utils import CONFIG, makeRequestsSession, getProjectRoot, active_sleep
+from src.utils import CONFIG, makeRequestsSession, getProjectRoot
 
 
 class RetriesStrategy(Enum):
