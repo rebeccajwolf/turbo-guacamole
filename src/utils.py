@@ -231,6 +231,43 @@ DEFAULT_CONFIG: Config = Config(
 )
 
 
+def active_sleep(seconds: float) -> None:
+	"""
+	Simple active sleep function that keeps the container alive
+	by using small sleep intervals and periodic logging.
+	
+	Args:
+		seconds: Total number of seconds to sleep
+	"""
+	start_time = time.time()
+	end_time = start_time + seconds
+	
+	# Log initial sleep message
+	logging.debug(f"Starting sleep period of {seconds:.1f} seconds")
+	
+	# Sleep in small chunks to keep the container active
+	while time.time() < end_time:
+		# Sleep for a short interval (1-3 seconds)
+		chunk_sleep = min(random.uniform(1, 3), end_time - time.time())
+		if chunk_sleep <= 0:
+			break
+		time.sleep(chunk_sleep)
+		
+		# Log progress periodically (roughly every minute)
+		elapsed = time.time() - start_time
+		remaining = end_time - time.time()
+		
+		if elapsed % 60 < 3 and remaining > 10:  # Log approximately every minute
+			progress_percent = (elapsed / seconds) * 100
+			logging.debug(f"Sleep progress: {elapsed:.1f}/{seconds:.1f}s ({progress_percent:.1f}%)")
+			
+		# Occasionally perform a small CPU operation to keep container active
+		if random.random() < 0.1:  # 10% chance each iteration
+			_ = sum(i * i for i in range(10))  # Minimal CPU activity
+
+
+
+
 # def active_sleep(seconds: float) -> None:
 # 	"""
 # 	Active sleep function that keeps the browser alive during sleep periods.
@@ -257,64 +294,64 @@ DEFAULT_CONFIG: Config = Config(
 # 		time.sleep(seconds)
 
 
-class ActiveSleepManager:
-    def __init__(self):
-        self.running = True
-        self.stop_event = Event()
-        self._schedule_thread = None
+# class ActiveSleepManager:
+#     def __init__(self):
+#         self.running = True
+#         self.stop_event = Event()
+#         self._schedule_thread = None
 
-    def start(self):
-        """Start the schedule manager"""
-        self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
-        self._schedule_thread.start()
+#     def start(self):
+#         """Start the schedule manager"""
+#         self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
+#         self._schedule_thread.start()
 
-    def stop(self):
-        """Stop the schedule manager gracefully"""
-        self.running = False
-        self.stop_event.set()
-        if self._schedule_thread:
-            self._schedule_thread.join(timeout=5)
+#     def stop(self):
+#         """Stop the schedule manager gracefully"""
+#         self.running = False
+#         self.stop_event.set()
+#         if self._schedule_thread:
+#             self._schedule_thread.join(timeout=5)
 
-    def _run_schedule(self):
-        """Run the schedule loop with proper error handling"""
-        while self.running and not self.stop_event.is_set():
-            try:
-                schedule.run_pending()
-                self.stop_event.wait(timeout=1)
-            except Exception as e:
-                logging.error(f"Schedule error: {str(e)}")
-                time.sleep(1)
+#     def _run_schedule(self):
+#         """Run the schedule loop with proper error handling"""
+#         while self.running and not self.stop_event.is_set():
+#             try:
+#                 schedule.run_pending()
+#                 self.stop_event.wait(timeout=1)
+#             except Exception as e:
+#                 logging.error(f"Schedule error: {str(e)}")
+#                 time.sleep(1)
 
-def active_sleep(seconds: float) -> None:
-    """
-    Active sleep function that uses the scheduler system to keep the container alive.
+# def active_sleep(seconds: float) -> None:
+#     """
+#     Active sleep function that uses the scheduler system to keep the container alive.
 	
-    Args:
-        seconds: Total number of seconds to sleep
-    """
-    sleep_completed = False
-    manager = ActiveSleepManager()
+#     Args:
+#         seconds: Total number of seconds to sleep
+#     """
+#     sleep_completed = False
+#     manager = ActiveSleepManager()
 	
-    def mark_complete():
-        nonlocal sleep_completed
-        sleep_completed = True
-        return schedule.CancelJob
+#     def mark_complete():
+#         nonlocal sleep_completed
+#         sleep_completed = True
+#         return schedule.CancelJob
 	
-    try:
-        # Start the scheduler manager
-        manager.start()
+#     try:
+#         # Start the scheduler manager
+#         manager.start()
 		
-        # Schedule the wake-up
-        schedule.every(seconds).seconds.do(mark_complete)
+#         # Schedule the wake-up
+#         schedule.every(seconds).seconds.do(mark_complete)
 		
-        # Wait until sleep is complete
-        while not sleep_completed:
-            time.sleep(1)
+#         # Wait until sleep is complete
+#         while not sleep_completed:
+#             time.sleep(1)
 			
-    finally:
-        # Cleanup
-        manager.stop()
-        schedule.clear()
+#     finally:
+#         # Cleanup
+#         manager.stop()
+#         schedule.clear()
 
 
 

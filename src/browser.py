@@ -56,7 +56,10 @@ class Browser:
 			saveBrowserConfig(self.userDataDir, self.browserConfig)
 		self.webdriver = self.browserSetup()
 		self.utils = Utils(self.webdriver)
-		self.browser_keeper = BrowserKeeper(self)
+		self._stop_heartbeat = threading.Event()
+		self._heartbeat_thread = None
+		self._start_heartbeat()
+		# self.browser_keeper = BrowserKeeper(self)
 		logging.debug("out __init__")
 
 	# def active_sleep(self, seconds: float) -> None:
@@ -74,6 +77,48 @@ class Browser:
 	# 		# Stop browser keeper
 	# 		self.browser_keeper.stop()
 
+	def _start_heartbeat(self):
+		"""Start the heartbeat thread to keep the browser connection alive"""
+		self._stop_heartbeat.clear()
+		self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
+		self._heartbeat_thread.start()
+		
+	def _heartbeat_loop(self):
+		"""Continuously send heartbeats to keep the browser connection alive"""
+		scripts = [
+			"return document.title;",
+			"return window.innerHeight;",
+			"return document.readyState;",
+			"return navigator.userAgent;",
+			"return new Date().toString();",
+			"return 1;",
+			"return window.location.href;",
+			"return document.documentElement.clientWidth;",
+			"return document.documentElement.clientHeight;",
+			"return window.performance.now();"
+		]
+		
+		while not self._stop_heartbeat.is_set():
+			try:
+				# Execute a lightweight script
+				script = random.choice(scripts)
+				self.webdriver.execute_script(script)
+				
+				# Log heartbeat occasionally (every ~5 minutes)
+				if random.random() < 0.01:  # 1% chance each time
+					logging.debug("Browser heartbeat active")
+					
+				# Sleep for a short interval (5-10 seconds)
+				# Short enough to maintain connection but not flood with requests
+				sleep_time = random.uniform(5, 10)
+				
+				# Use wait with timeout to allow for responsive shutdown
+				self._stop_heartbeat.wait(timeout=sleep_time)
+				
+			except Exception as e:
+				# If we encounter an error, log it but don't stop the heartbeat
+				logging.debug(f"Heartbeat error (will retry): {str(e)}")
+				time.sleep(2)  # Short delay before retry
 
 	def __enter__(self):
 		logging.debug("in __enter__")
@@ -89,7 +134,10 @@ class Browser:
 		logging.debug(
 			f"in __exit__ exc_type={exc_type} exc_value={exc_value} traceback={traceback}"
 		)
-		
+		self._stop_heartbeat.set()
+		if self._heartbeat_thread:
+			self._heartbeat_thread.join(timeout=2)
+
 		self.webdriver.close()
 		self.webdriver.quit()
 
@@ -125,7 +173,7 @@ class Browser:
 		options.add_argument('--disable-background-timer-throttling')
 		options.add_argument('--disable-backgrounding-occluded-windows')
 		options.add_argument('--disable-renderer-backgrounding')
-		options.add_argument('--disable-features=IsolateOrigins,site-per-process')
+		# options.add_argument('--disable-features=IsolateOrigins,site-per-process')
 		options.page_load_strategy = "eager"
 
 		seleniumwireOptions: dict[str, Any] = {
@@ -229,17 +277,17 @@ class Browser:
 			},
 		)
 
-		 # Keep session alive with periodic script execution
-		def session_keeper():
-			while True:
-				try:
-					# Execute a lightweight script
-					driver.execute_script("return 1;")
-					time.sleep(30)  # Heartbeat interval
-				except Exception:
-					break
+		#  # Keep session alive with periodic script execution
+		# def session_keeper():
+		# 	while True:
+		# 		try:
+		# 			# Execute a lightweight script
+		# 			driver.execute_script("return 1;")
+		# 			time.sleep(30)  # Heartbeat interval
+		# 		except Exception:
+		# 			break
 					
-		threading.Thread(target=session_keeper, daemon=True).start()
+		# threading.Thread(target=session_keeper, daemon=True).start()
 
 		return driver
 
