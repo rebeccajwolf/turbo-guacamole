@@ -124,8 +124,7 @@ class Browser:
 		options.add_argument('--disable-background-timer-throttling')
 		options.add_argument('--disable-backgrounding-occluded-windows')
 		options.add_argument('--disable-renderer-backgrounding')
-		options.add_argument("--disable-tab-discarding")  # Prevent tab discarding
-		options.add_argument("--disable-tab-suspending")
+		options.add_argument('--disable-features=IsolateOrigins,site-per-process')
 		options.page_load_strategy = "eager"
 
 		seleniumwireOptions: dict[str, Any] = {
