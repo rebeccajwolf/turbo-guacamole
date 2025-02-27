@@ -25,7 +25,8 @@ class Activities:
             f'//*[@id="daily-sets"]/mee-card-group[1]/div/mee-card[{cardId}]/div/card-content/mee-rewards-daily-set-item-content/div/a',
         )
         self.browser.utils.click(element)
-        self.browser.utils.switchToNewTab()
+        sleep(5)  # Add small delay to ensure click is registered
+        # self.browser.utils.switchToNewTab()
 
     def openMorePromotionsActivity(self, cardId: int):
         cardId += 1
@@ -35,7 +36,8 @@ class Activities:
             f"#more-activities > .m-card-group > .ng-scope:nth-child({cardId}) .ds-card-sec",
         )
         self.browser.utils.click(element)
-        self.browser.utils.switchToNewTab()
+        sleep(5)  # Add small delay to ensure click is registered
+        # self.browser.utils.switchToNewTab()
 
     def completeSearch(self):
         # Simulate completing a search activity
@@ -46,12 +48,41 @@ class Activities:
         # noinspection SpellCheckingInspection
         self.webdriver.find_element(By.ID, f"btoption{randint(0, 1)}").click()
 
+
+    def waitUntilQuizLoads(self):
+        """Wait until quiz loads"""
+        tries = 0
+        refreshCount = 0
+        while True:
+            try:
+                self.webdriver.find_element(
+                    By.XPATH, '//*[@id="currentQuestionContainer"]')
+                return True
+            except:
+                if tries < 10:
+                    tries += 1
+                    sleep(0.5)
+                else:
+                    if refreshCount < 5:
+                        self.webdriver.refresh()
+                        refreshCount += 1
+                        tries = 0
+                        sleep(5)
+                    else:
+                        return False
+
     def completeQuiz(self):
         # Simulate completing a quiz activity
+        sleep(12)
+        if not self.waitUntilQuizLoads():
+            self.browser.utils.resetTabs()
+            return
         with contextlib.suppress(TimeoutException):
             startQuiz = self.browser.utils.waitUntilQuizLoads()
             self.browser.utils.click(startQuiz)
-        self.browser.utils.waitUntilVisible(By.ID, "overlayPanel", 5)
+        self.browser.utils.waitUntilVisible(
+            By.XPATH, '//*[@id="currentQuestionContainer"]/div/div[1]', 180
+        )
         currentQuestionNumber: int = self.webdriver.execute_script(
             "return _w.rewardsQuizRenderInfo.currentQuestionNumber"
         )
@@ -111,10 +142,15 @@ class Activities:
 
     def completeThisOrThat(self):
         # Simulate completing a This or That activity
-        startQuiz = self.browser.utils.waitUntilQuizLoads()
-        self.browser.utils.click(startQuiz)
+        sleep(12)
+        if not self.waitUntilQuizLoads():
+            self.browser.utils.resetTabs()
+            return
+        with contextlib.suppress(TimeoutException):
+            startQuiz = self.browser.utils.waitUntilQuizLoads()
+            self.browser.utils.click(startQuiz)
         self.browser.utils.waitUntilVisible(
-            By.XPATH, '//*[@id="currentQuestionContainer"]/div/div[1]', 10
+            By.XPATH, '//*[@id="currentQuestionContainer"]/div/div[1]', 180
         )
         sleep(randint(10, 15))
         for _ in range(10):
@@ -146,22 +182,42 @@ class Activities:
         try:
             activityTitle = cleanupActivityTitle(activity["title"])
             logging.debug(f"activityTitle={activityTitle}")
-            if activity["complete"] is True or activity["pointProgressMax"] == 0:
+            if activity["complete"] is True or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
                 logging.debug("Already done, returning")
                 return
             if activityTitle in CONFIG.activities.ignore:
                 logging.debug(f"Ignoring {activityTitle}")
                 return
+
+                
             # Open the activity for the activity
             cardId = activities.index(activity)
             isDailySet = (
                 "daily_set_date" in activity["attributes"]
                 and activity["attributes"]["daily_set_date"]
             )
+
+
             if isDailySet:
                 self.openDailySetActivity(cardId)
             else:
                 self.openMorePromotionsActivity(cardId)
+
+
+            sleep(7)
+            try:
+                if self.webdriver.find_element(By.XPATH, '//*[@id="modal-host"]/div[2]/button').is_displayed():
+                    self.webdriver.find_element(By.XPATH, '//*[@id="modal-host"]/div[2]/button').click()
+                    return
+            except:
+                pass
+            finally:
+                # Check if new tab exists before switching
+                if len(self.webdriver.window_handles) > 1:
+                    self.browser.utils.switchToNewTab()
+            sleep(7)
+
+
             with contextlib.suppress(TimeoutException):
                 searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q")
                 self.browser.utils.click(searchbar)
