@@ -80,7 +80,7 @@ class Login:
 				continue
 			except Exception as e:
 				logging.error(f"Error during login: {e}")
-				self.webdriver.close()
+				self.browser.cleanup()
 				raise
 
 	def execute_login(self) -> None:
