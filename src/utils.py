@@ -544,9 +544,15 @@ class Utils:
 
 	def goToRewards(self) -> None:
 		self.webdriver.get(REWARDS_URL)
-		assert (
-			self.webdriver.current_url == REWARDS_URL
-		), f"{self.webdriver.current_url} {REWARDS_URL}"
+		while True:
+				try:
+						assert (
+								self.webdriver.current_url == REWARDS_URL
+						), f"{self.webdriver.current_url} {REWARDS_URL}"
+						return
+				except:
+						self.webdriver.refresh()
+						time.sleep(10)
 
 	def goToSearch(self) -> None:
 		self.webdriver.get(SEARCH_URL)
@@ -670,7 +676,7 @@ def argumentParser() -> Namespace:
 	parser = ArgumentParser(
 		description="A simple bot that uses Selenium to farm M$ Rewards in Python",
 		epilog="At least one account should be specified, either using command line arguments or a configuration file."
-			   "\nAll specified arguments will override the configuration file values."
+				 "\nAll specified arguments will override the configuration file values."
 	)
 	parser.add_argument(
 		"-c",
