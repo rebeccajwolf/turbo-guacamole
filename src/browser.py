@@ -120,6 +120,38 @@ class Browser:
 	# 			logging.debug(f"Heartbeat error (will retry): {str(e)}")
 	# 			time.sleep(2)  # Short delay before retry
 
+	def cleanup(self):
+		"""Clean up browser resources with proper process termination"""
+		if self.webdriver:
+			try:
+				# Store current window handle
+				current_handle = self.webdriver.current_window_handle
+				
+				# Close any extra tabs/windows except main
+				all_handles = self.webdriver.window_handles
+				for handle in all_handles:
+					if handle != current_handle:
+						self.webdriver.switch_to.window(handle)
+						self.webdriver.close()
+				
+				# Switch back to main window and close it
+				self.webdriver.switch_to.window(current_handle)
+				self.webdriver.close()
+				
+			except Exception as e:
+				logging.error(f"Error during browser cleanup: {str(e)}")
+			finally:
+				try:
+					# Ensure webdriver is fully quit
+					self.webdriver.quit()
+					
+					# Small delay to ensure processes are terminated
+					time.sleep(1)
+				except Exception as e:
+					logging.error(f"Error during browser quit: {str(e)}")
+				self.webdriver = None
+				self.utils = None
+
 	def __enter__(self):
 		logging.debug("in __enter__")
 		return self
@@ -138,8 +170,7 @@ class Browser:
 		# if self._heartbeat_thread:
 		# 	self._heartbeat_thread.join(timeout=2)
 
-		self.webdriver.close()
-		self.webdriver.quit()
+		self.cleanup()
 
 	def browserSetup(
 		self,
