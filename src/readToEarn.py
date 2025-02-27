@@ -49,8 +49,9 @@ class ReadToEarn:
         )
 
         # Get Referer URL from webdriver
-        self.webdriver.get(authorization_url)
         while True:
+            self.webdriver.get(authorization_url)
+            time.sleep(180)
             logging.info("[READ TO EARN] Waiting for Login")
             if (
                 self.webdriver.current_url[:48]
@@ -58,7 +59,7 @@ class ReadToEarn:
             ):
                 redirect_response = self.webdriver.current_url
                 break
-            time.sleep(1)
+            time.sleep(7)
 
         logging.info("[READ TO EARN] Logged-in successfully !")
         # Use returned URL to create a token

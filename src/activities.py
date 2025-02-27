@@ -189,10 +189,10 @@ class Activities:
                 self.completeSearch()
         except Exception:
             logging.error(f"[ACTIVITY] Error doing {activityTitle}", exc_info=True)
-        self.browser.utils.resetTabs()
         logging.debug(f"Entering Sleep after Activity")
         sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
         logging.debug(f"Finished Sleep after Activity")
+        self.browser.utils.resetTabs()
 
     def completeActivities(self):
         logging.info("[DAILY SET] " + "Trying to complete the Daily Set...")
