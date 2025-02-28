@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from random import randint
+from random import randint, choice
 from time import sleep
 
 from selenium.common import TimeoutException
@@ -51,7 +51,7 @@ class Activities:
 		# click poll option
 		while res:
 			choices = ['btoption0', 'btoption1']
-			self.webdriver.find_element(By.ID, random.choice(choices)).click()
+			self.webdriver.find_element(By.ID, choice(choices)).click()
 			time.sleep(7)
 			if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
 				res = False
