@@ -658,6 +658,14 @@ class Utils:
 		self.webdriver.switch_to.window(window_name=self.webdriver.window_handles[0])
 		time.sleep(0.5)
 
+	def isElementExists(self, by: str, selector: str) -> bool:
+			'''Returns True if given element exits else False'''
+			try:
+					self.webdriver.find_element(by, selector)
+			except NoSuchElementException:
+					return False
+			return True
+
 	def click(self, element: WebElement) -> None:
 		try:
 			WebDriverWait(self.webdriver, 10).until(
