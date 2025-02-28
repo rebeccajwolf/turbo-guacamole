@@ -293,7 +293,7 @@ def executeBot(currentAccount):
 			"Account Update",
 			"\n".join(
 				[
-					f"👤 Account: {currentAccount.username}",
+					f"👤 Account: {currentAccount.email}",
 					f"Your account has been locked !",
 					f"⚠️ Locked",
 				]
@@ -305,7 +305,7 @@ def executeBot(currentAccount):
 			"Account Update",
 			"\n".join(
 				[
-					f"👤 Account: {currentAccount.username}",
+					f"👤 Account: {currentAccount.email}",
 					f"Your account has been suspended !",
 					f"❌ Suspended",
 				]
