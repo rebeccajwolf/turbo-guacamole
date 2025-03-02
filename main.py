@@ -122,8 +122,8 @@ def downloadWebDriver():
 	"""Downloads and sets up chromedriver in the correct location"""
 	try:
 		url = 'https://chromedriver.storage.googleapis.com/LATEST_RELEASE'
-    response = requests.get(url)
-    version_number = response.text
+		response = requests.get(url)
+		version_number = response.text
 		# Download the zip file
 		download_url = "https://chromedriver.storage.googleapis.com/" + version_number +"/chromedriver_linux64.zip"
 		latest_driver_zip = wget.download(download_url, 'chromedriver.zip')
