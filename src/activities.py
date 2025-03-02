@@ -290,7 +290,8 @@ class Activities:
 		except Exception:
 			logging.error(f"[ACTIVITY] Error doing {activityTitle}", exc_info=True)
 		logging.debug(f"Entering Sleep after Activity")
-		sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+		if not active_sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max)):
+			return
 		logging.debug(f"Finished Sleep after Activity")
 		self.browser.utils.resetTabs()
 

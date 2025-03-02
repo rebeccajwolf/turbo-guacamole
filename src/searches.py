@@ -227,7 +227,8 @@ class Searches:
 					f"[BING] Search attempt not counted {i}/{Searches.maxRetries}, sleeping {sleepTime}"
 					f" seconds..."
 				)
-				sleep(sleepTime)
+				if not active_sleep(sleepTime):
+					return
 
 			searchbar = self.browser.utils.waitUntilClickable(
 				By.ID, "sb_form_q", timeToWait=40
@@ -242,7 +243,8 @@ class Searches:
 
 			pointsAfter = self.browser.utils.getAccountPoints()
 			if pointsBefore < pointsAfter:
-				sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+				if not active_sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max)):
+					return
 				return
 
 			# todo
