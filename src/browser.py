@@ -60,12 +60,6 @@ class Browser:
 		# self._heartbeat_thread = None
 		# self._start_heartbeat()
 		# self.browser_keeper = BrowserKeeper(self)
-		# Register this browser with the job manager for proper cleanup
-		try:
-			from main import job_manager
-			job_manager.register_browser(self)
-		except (ImportError, AttributeError):
-			pass
 		logging.debug("out __init__")
 
 	# def active_sleep(self, seconds: float) -> None:
@@ -128,38 +122,33 @@ class Browser:
 
 	def cleanup(self):
 		"""Clean up browser resources with proper process termination"""
-		if hasattr(self, 'webdriver') and self.webdriver:
+		if self.webdriver:
 			try:
 				# Store current window handle
-				try:
-					current_handle = self.webdriver.current_window_handle
-					
-					# Close any extra tabs/windows except main
-					all_handles = self.webdriver.window_handles
-					for handle in all_handles:
-						if handle != current_handle:
-							self.webdriver.switch_to.window(handle)
-							self.webdriver.close()
-					
-					# Switch back to main window and close it
-					self.webdriver.switch_to.window(current_handle)
-					self.webdriver.close()
-				except Exception as e:
-					logging.debug(f"Error during tab cleanup: {str(e)}")
+				current_handle = self.webdriver.current_window_handle
+				
+				# Close any extra tabs/windows except main
+				all_handles = self.webdriver.window_handles
+				for handle in all_handles:
+					if handle != current_handle:
+						self.webdriver.switch_to.window(handle)
+						self.webdriver.close()
+				
+				# Switch back to main window and close it
+				self.webdriver.switch_to.window(current_handle)
+				self.webdriver.close()
 				
 			except Exception as e:
 				logging.error(f"Error during browser cleanup: {str(e)}")
 			finally:
 				try:
-					# Ensure webdriver is fully quit with timeout
+					# Ensure webdriver is fully quit
 					self.webdriver.quit()
 					
 					# Small delay to ensure processes are terminated
 					time.sleep(1)
 				except Exception as e:
 					logging.error(f"Error during browser quit: {str(e)}")
-				
-				# Force cleanup of references
 				self.webdriver = None
 				self.utils = None
 
@@ -384,39 +373,18 @@ class Browser:
 
 	@staticmethod
 	def getChromeVersion() -> str:
-		"""Get Chrome version with better error handling and timeouts"""
 		chrome_options = ChromeOptions()
 		chrome_options.add_argument("--headless=new")
 		chrome_options.add_argument("--no-sandbox")
-		chrome_options.add_argument("--disable-dev-shm-usage")
-		
-		driver = None
-		try:
-				# Create service with shorter timeout
-				service = ChromeService("chromedriver")
-				service.start()
-				
-				# Create driver with shorter connection timeout
-				driver = WebDriver(options=chrome_options, service=service)
-				
-				# Set script timeout to prevent hanging
-				driver.set_script_timeout(10)
-				
-				# Get version
-				version = driver.capabilities["browserVersion"]
-				# logging.info(f'Chrome Version: {version}')
-				return version
-		except Exception as e:
-				logging.warning(f"Error getting Chrome version: {str(e)}")
-				# Fall back to a default version that's likely to work
-				# return "114.0.5735.90"
-		finally:
-				# Ensure driver is properly closed
-				if driver:
-						try:
-								driver.quit()
-						except Exception:
-								pass
+		driver = WebDriver(service=ChromeService("chromedriver"), options=chrome_options)
+		# driver = WebDriver(options=chrome_options)
+		version = driver.capabilities["browserVersion"]
+
+		driver.close()
+		driver.quit()
+		# driver.__exit__(None, None, None)
+
+		return version
 
 	def getRemainingSearches(
 		self, desktopAndMobile: bool = False

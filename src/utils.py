@@ -231,79 +231,6 @@ DEFAULT_CONFIG: Config = Config(
 )
 
 
-class ActiveSleepManager:
-	def __init__(self):
-		self.running = True
-		self.stop_event = Event()
-		self._schedule_thread = None
-
-	def start(self):
-		"""Start the schedule manager"""
-		self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
-		self._schedule_thread.start()
-
-	def stop(self):
-		"""Stop the schedule manager gracefully"""
-		self.running = False
-		self.stop_event.set()
-		if self._schedule_thread:
-			self._schedule_thread.join(timeout=5)
-
-	def _run_schedule(self):
-		"""Run the schedule loop with proper error handling"""
-		while self.running and not self.stop_event.is_set():
-			try:
-				schedule.run_pending()
-				self.stop_event.wait(timeout=1)
-			except Exception as e:
-				logging.error(f"Schedule error: {str(e)}")
-				time.sleep(1)
-
-def active_sleep(seconds: float, check_interval: float = 1.0) -> bool:
-	"""
-	Active sleep function that checks for job stop signals periodically.
-	
-	Args:
-		seconds: Total number of seconds to sleep
-		check_interval: How often to check for stop signals (in seconds)
-	
-	Returns:
-		bool: True if sleep completed normally, False if interrupted by stop signal
-	"""
-	if seconds <= 0:
-		return True
-		
-	# For very short sleeps, just use regular sleep
-	if seconds < 0.5:
-		time.sleep(seconds)
-		return True
-		
-	# Adjust check interval for very long sleeps
-	if seconds > 60:
-		check_interval = min(check_interval, 5.0)  # Check at least every 5 seconds for long sleeps
-	
-	end_time = time.time() + seconds
-	
-	while time.time() < end_time:
-		# Check for stop signal
-		try:
-			# Import here to avoid circular imports
-			from main import check_for_stop_signal
-			if check_for_stop_signal():
-				logging.info(f"Stop signal detected during sleep, breaking early after {time.time() - (end_time - seconds):.1f} seconds")
-				return False
-		except (ImportError, AttributeError):
-			# If function not available, continue with normal sleep
-			pass
-		
-		# Sleep for the check interval or remaining time, whichever is shorter
-		remaining = end_time - time.time()
-		if remaining <= 0:
-			break
-		time.sleep(min(check_interval, remaining))
-	
-	return True
-
 # class ActiveSleepManager:
 # 	def __init__(self):
 # 		self.running = True
@@ -439,79 +366,64 @@ def active_sleep(seconds: float, check_interval: float = 1.0) -> bool:
 # 		time.sleep(seconds)
 
 
-# class ActiveSleepManager:
-# 	def __init__(self):
-# 		self.running = True
-# 		self.stop_event = Event()
-# 		self._schedule_thread = None
+class ActiveSleepManager:
+	def __init__(self):
+		self.running = True
+		self.stop_event = Event()
+		self._schedule_thread = None
 
-# 	def start(self):
-# 		"""Start the schedule manager"""
-# 		self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
-# 		self._schedule_thread.start()
+	def start(self):
+		"""Start the schedule manager"""
+		self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
+		self._schedule_thread.start()
 
-# 	def stop(self):
-# 		"""Stop the schedule manager gracefully"""
-# 		self.running = False
-# 		self.stop_event.set()
-# 		if self._schedule_thread:
-# 			self._schedule_thread.join(timeout=5)
+	def stop(self):
+		"""Stop the schedule manager gracefully"""
+		self.running = False
+		self.stop_event.set()
+		if self._schedule_thread:
+			self._schedule_thread.join(timeout=5)
 
-# 	def _run_schedule(self):
-# 		"""Run the schedule loop with proper error handling"""
-# 		while self.running and not self.stop_event.is_set():
-# 			try:
-# 				schedule.run_pending()
-# 				self.stop_event.wait(timeout=1)
-# 			except Exception as e:
-# 				logging.error(f"Schedule error: {str(e)}")
-# 				time.sleep(1)
+	def _run_schedule(self):
+		"""Run the schedule loop with proper error handling"""
+		while self.running and not self.stop_event.is_set():
+			try:
+				schedule.run_pending()
+				self.stop_event.wait(timeout=1)
+			except Exception as e:
+				logging.error(f"Schedule error: {str(e)}")
+				time.sleep(1)
 
-# def active_sleep(seconds: float) -> None:
-# 	"""
-# 	Active sleep function that uses the scheduler system to keep the container alive.
-# 	Also checks for job stop signals periodically.
+def active_sleep(seconds: float) -> None:
+	"""
+	Active sleep function that uses the scheduler system to keep the container alive.
 	
-# 	Args:
-# 		seconds: Total number of seconds to sleep
-# 	"""
-# 	sleep_completed = False
-# 	manager = ActiveSleepManager()
+	Args:
+		seconds: Total number of seconds to sleep
+	"""
+	sleep_completed = False
+	manager = ActiveSleepManager()
 	
-# 	def mark_complete():
-# 		nonlocal sleep_completed
-# 		sleep_completed = True
-# 		return schedule.CancelJob
+	def mark_complete():
+		nonlocal sleep_completed
+		sleep_completed = True
+		return schedule.CancelJob
 	
-# 	try:
-# 		# Start the scheduler manager
-# 		manager.start()
+	try:
+		# Start the scheduler manager
+		manager.start()
 		
-# 		# Schedule the wake-up
-# 		schedule.every(seconds).seconds.do(mark_complete)
+		# Schedule the wake-up
+		schedule.every(seconds).seconds.do(mark_complete)
 		
-# 		# Wait until sleep is complete or stop signal received
-# 		end_time = time.time() + seconds
-# 		check_interval = min(1.0, seconds / 10)  # Check more frequently for shorter sleeps
-		
-# 		while not sleep_completed and time.time() < end_time:
-# 			# Check for stop signal frequently
-# 			try:
-# 				# Import here to avoid circular imports
-# 				from main import check_for_stop_signal
-# 				if check_for_stop_signal():
-# 					logging.info("Stop signal detected during active_sleep, breaking early")
-# 					break
-# 			except (ImportError, AttributeError):
-# 				# If function not available, continue with normal sleep
-# 				pass
+		# Wait until sleep is complete
+		while not sleep_completed:
+			time.sleep(1)
 			
-# 			time.sleep(check_interval)
-			
-# 	finally:
-# 		# Cleanup
-# 		manager.stop()
-# 		schedule.clear()
+	finally:
+		# Cleanup
+		manager.stop()
+		schedule.clear()
 
 
 
@@ -850,12 +762,6 @@ def argumentParser() -> Namespace:
 		action="store_true",
 		help="Set the logging level to DEBUG",
 	)
-	parser.add_argument(
-		"-qs",
-		"--quick-schedule",
-		action="store_true",
-		help="Enable quick scheduling for testing (runs every 5 minutes)",
-	)
 	return parser.parse_args()
 
 
@@ -889,9 +795,6 @@ def commandLineArgumentsAsConfig(args: Namespace) -> Config:
 	if args.searchtype:
 		config.search = Config()
 		config.search.type = args.searchtype
-	if args.quick_schedule:
-		config.debug = Config()
-		config.debug.quick_schedule = True
 	if args.email and args.password:
 		config.accounts = [Config(
 			email=args.email,
@@ -954,9 +857,6 @@ def createEmptyConfig(configPath: Path, config: Config) -> None:
 			'apprise': {
 				'urls': ['discord://{WebhookID}/{WebhookToken}']
 			},
-			'debug': {
-				'quick_schedule': False
-			},
 			'accounts': [
 				{
 					'email': 'Your Email 1',
@@ -1016,14 +916,6 @@ def update_config_from_env():
 			# Clear existing urls and add new token
 			config['apprise']['urls'] = [token_env]
 			print("Updated Discord webhook URL from environment")
-
-		# Update quick schedule from QUICK_SCHEDULE env var
-		quick_schedule_env = os.getenv('QUICK_SCHEDULE')
-		if quick_schedule_env and quick_schedule_env.lower() in ('true', '1', 'yes'):
-			if not config.get('debug'):
-				config['debug'] = {}
-			config['debug']['quick_schedule'] = True
-			print("Enabled quick scheduling from environment")
 		
 		# Write updated config back to file
 		with open(config_path, 'w') as file:
