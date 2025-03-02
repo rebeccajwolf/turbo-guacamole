@@ -377,6 +377,8 @@ class Browser:
 		chrome_options.add_argument("--headless=new")
 		chrome_options.add_argument("--no-sandbox")
 		chrome_options.add_argument("--disable-dev-shm-usage")
+		chrome_options.add_argument("--ozone-platform=wayland")
+		chrome_options.add_argument("--enable-features=UseOzonePlatform")
 		# driver = WebDriver(service=ChromeService("chromedriver"), options=chrome_options)
 		driver = WebDriver(options=chrome_options)
 		version = driver.capabilities["browserVersion"]
