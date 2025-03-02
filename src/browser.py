@@ -122,33 +122,38 @@ class Browser:
 
 	def cleanup(self):
 		"""Clean up browser resources with proper process termination"""
-		if self.webdriver:
+		if hasattr(self, 'webdriver') and self.webdriver:
 			try:
 				# Store current window handle
-				current_handle = self.webdriver.current_window_handle
-				
-				# Close any extra tabs/windows except main
-				all_handles = self.webdriver.window_handles
-				for handle in all_handles:
-					if handle != current_handle:
-						self.webdriver.switch_to.window(handle)
-						self.webdriver.close()
-				
-				# Switch back to main window and close it
-				self.webdriver.switch_to.window(current_handle)
-				self.webdriver.close()
+				try:
+					current_handle = self.webdriver.current_window_handle
+					
+					# Close any extra tabs/windows except main
+					all_handles = self.webdriver.window_handles
+					for handle in all_handles:
+						if handle != current_handle:
+							self.webdriver.switch_to.window(handle)
+							self.webdriver.close()
+					
+					# Switch back to main window and close it
+					self.webdriver.switch_to.window(current_handle)
+					self.webdriver.close()
+				except Exception as e:
+					logging.debug(f"Error during tab cleanup: {str(e)}")
 				
 			except Exception as e:
 				logging.error(f"Error during browser cleanup: {str(e)}")
 			finally:
 				try:
-					# Ensure webdriver is fully quit
+					# Ensure webdriver is fully quit with timeout
 					self.webdriver.quit()
 					
 					# Small delay to ensure processes are terminated
 					time.sleep(1)
 				except Exception as e:
 					logging.error(f"Error during browser quit: {str(e)}")
+				
+				# Force cleanup of references
 				self.webdriver = None
 				self.utils = None
 

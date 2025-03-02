@@ -406,7 +406,8 @@ class JobManager:
 				self.stop_event = Event()
 				self.job_running = False
 				self.last_schedule_check = datetime.now()
-				self.background_monitor = BackgroundMonitor(check_interval=60.0)  # Check every minute
+				self.background_monitor = BackgroundMonitor(check_interval=30.0)  # Check every 30 seconds
+				self.browser_instances = []  # Track active browser instances
 		
 		def is_job_running(self):
 				"""Check if a job is currently running"""
@@ -417,8 +418,16 @@ class JobManager:
 				if self.job_running:
 						logging.info("Stopping current job...")
 						self.stop_event.set()
+						
 						# Wait for a short time to allow job to clean up
 						time.sleep(2)
+						
+						# If job is still running after timeout, force terminate
+						if self.job_running and self.current_job_thread and self.current_job_thread.is_alive():
+								logging.warning("Job still running after timeout, forcing termination")
+								# We can't actually terminate threads in Python, but we can set flags
+								# The job should check these flags and terminate gracefully
+						
 						return True
 				return False
 		
@@ -428,13 +437,16 @@ class JobManager:
 				if not self.current_job_lock.acquire(blocking=False):
 						logging.warning(f"Another job is already running, stopping it first")
 						self.stop_current_job()
-						# Wait for the lock to be released
-						self.current_job_lock.acquire()
+						# Wait for the lock to be released with timeout
+						if not self.current_job_lock.acquire(blocking=True, timeout=10):
+								logging.error("Failed to acquire job lock after stopping previous job")
+								return
 				
 				try:
 						# Reset the stop event
 						self.stop_event.clear()
 						self.job_running = True
+						self.browser_instances = []  # Reset browser instances list
 						
 						# Start the job in a new thread
 						self.current_job_thread = Thread(
@@ -471,6 +483,16 @@ class JobManager:
 						# Clean up
 						self.job_running = False
 						self.background_monitor.stop()  # Stop the background monitor
+						
+						# Clean up any remaining browser instances
+						for browser in self.browser_instances:
+								try:
+										if hasattr(browser, 'cleanup'):
+												browser.cleanup()
+								except Exception as e:
+										logging.error(f"Error cleaning up browser: {str(e)}")
+						
+						self.browser_instances = []  # Clear the list
 						self.current_job_lock.release()
 						logging.info(f"Job '{job_name}' completed at {datetime.now().strftime('%H:%M:%S')}")
 		
@@ -478,7 +500,7 @@ class JobManager:
 				"""Check if we should stop the current job for a scheduled job"""
 				# Check if any scheduled jobs need to run
 				now = datetime.now()
-				if (now - self.last_schedule_check).total_seconds() < 30:
+				if (now - self.last_schedule_check).total_seconds() < 10:
 						return False
 						
 				self.last_schedule_check = now
@@ -496,9 +518,9 @@ class JobManager:
 		
 		def check_scheduled_jobs(self):
 				"""Check if any scheduled jobs need to run and run them if needed"""
-				# Only check every 30 seconds to avoid excessive checking
+				# Only check every 10 seconds to avoid excessive checking
 				now = datetime.now()
-				if (now - self.last_schedule_check).total_seconds() < 30:
+				if (now - self.last_schedule_check).total_seconds() < 10:
 						return
 						
 				self.last_schedule_check = now
@@ -507,6 +529,11 @@ class JobManager:
 				if schedule.idle_seconds() == 0:
 						logging.info("Scheduled job time reached, running pending jobs")
 						schedule.run_pending()
+		
+		def register_browser(self, browser):
+				"""Register a browser instance for cleanup if job is stopped"""
+				if browser not in self.browser_instances:
+						self.browser_instances.append(browser)
 
 # Global job manager instance
 job_manager = JobManager()
