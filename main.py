@@ -12,6 +12,7 @@ import wget
 import zipfile
 import shutil
 import time
+import requests
 from datetime import datetime
 from enum import Enum, auto
 from threading import Thread, Event
