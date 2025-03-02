@@ -393,6 +393,7 @@ class Browser:
 				
 				# Get version
 				version = driver.capabilities["browserVersion"]
+				logging.info(f'Chrome Version: {version}')
 				return version
 		except Exception as e:
 				logging.warning(f"Error getting Chrome version: {str(e)}")
