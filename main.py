@@ -30,6 +30,7 @@ from src.browser import RemainingSearches
 from src.loggingColoredFormatter import ColoredFormatter
 from src.utils import CONFIG, sendNotification, getProjectRoot, formatNumber
 from src.exceptions import *
+from src.background_monitor import BackgroundMonitor
 
 
 
@@ -405,6 +406,7 @@ class JobManager:
 				self.stop_event = Event()
 				self.job_running = False
 				self.last_schedule_check = datetime.now()
+				self.background_monitor = BackgroundMonitor(check_interval=60.0)  # Check every minute
 		
 		def is_job_running(self):
 				"""Check if a job is currently running"""
@@ -442,6 +444,12 @@ class JobManager:
 						)
 						self.current_job_thread.start()
 						
+						# Start the background monitor to check for stop signals
+						self.background_monitor.start(
+								check_function=self._should_stop_for_schedule,
+								action_function=self._handle_stop_signal
+						)
+						
 						logging.info(f"Started new job '{job_name}' at {datetime.now().strftime('%H:%M:%S')}")
 				except Exception as e:
 						logging.exception(f"Error starting job '{job_name}': {str(e)}")
@@ -462,8 +470,29 @@ class JobManager:
 				finally:
 						# Clean up
 						self.job_running = False
+						self.background_monitor.stop()  # Stop the background monitor
 						self.current_job_lock.release()
 						logging.info(f"Job '{job_name}' completed at {datetime.now().strftime('%H:%M:%S')}")
+		
+		def _should_stop_for_schedule(self):
+				"""Check if we should stop the current job for a scheduled job"""
+				# Check if any scheduled jobs need to run
+				now = datetime.now()
+				if (now - self.last_schedule_check).total_seconds() < 30:
+						return False
+						
+				self.last_schedule_check = now
+				
+				# Check if any scheduled jobs are due
+				return schedule.idle_seconds() == 0
+		
+		def _handle_stop_signal(self):
+				"""Handle a stop signal detected by the background monitor"""
+				logging.info("Background monitor detected scheduled job is due")
+				self.stop_current_job()
+				
+				# Run pending scheduled jobs
+				schedule.run_pending()
 		
 		def check_scheduled_jobs(self):
 				"""Check if any scheduled jobs need to run and run them if needed"""
