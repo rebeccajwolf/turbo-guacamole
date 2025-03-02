@@ -9,7 +9,7 @@ class BackgroundMonitor:
 	and can terminate running jobs when needed.
 	"""
 	
-	def __init__(self, check_interval: float = 60.0):
+	def __init__(self, check_interval: float = 15.0):
 		"""
 		Initialize the background monitor.
 		
@@ -81,7 +81,7 @@ class BackgroundMonitor:
 						# If no action function, still break the loop
 						break
 				
-				# Wait for the next check interval or until stopped
+				# Use smaller sleep intervals to be more responsive to stop requests
 				for _ in range(int(self.check_interval)):
 					if not self.running or self.stop_event.is_set():
 						break

@@ -60,6 +60,12 @@ class Browser:
 		# self._heartbeat_thread = None
 		# self._start_heartbeat()
 		# self.browser_keeper = BrowserKeeper(self)
+		# Register this browser with the job manager for proper cleanup
+		try:
+			from main import job_manager
+			job_manager.register_browser(self)
+		except (ImportError, AttributeError):
+			pass
 		logging.debug("out __init__")
 
 	# def active_sleep(self, seconds: float) -> None:

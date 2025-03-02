@@ -406,8 +406,9 @@ class JobManager:
 				self.stop_event = Event()
 				self.job_running = False
 				self.last_schedule_check = datetime.now()
-				self.background_monitor = BackgroundMonitor(check_interval=30.0)  # Check every 30 seconds
+				self.background_monitor = BackgroundMonitor(check_interval=15.0)  # Check every 15 seconds
 				self.browser_instances = []  # Track active browser instances
+				self.force_release_lock = Event()  # New event to force lock release
 		
 		def is_job_running(self):
 				"""Check if a job is currently running"""
@@ -418,31 +419,82 @@ class JobManager:
 				if self.job_running:
 						logging.info("Stopping current job...")
 						self.stop_event.set()
+						self.force_release_lock.set()  # Signal to force release the lock
 						
 						# Wait for a short time to allow job to clean up
 						time.sleep(2)
 						
 						# If job is still running after timeout, force terminate
 						if self.job_running and self.current_job_thread and self.current_job_thread.is_alive():
-								logging.warning("Job still running after timeout, forcing termination")
-								# We can't actually terminate threads in Python, but we can set flags
-								# The job should check these flags and terminate gracefully
+								logging.warning("Job still running after timeout, forcing cleanup")
+								
+								# Force cleanup of browser instances
+								self._force_cleanup_browsers()
+								
+								# Force release the lock if it's still held
+								if not self.current_job_lock.acquire(blocking=False):
+										# Lock is still held, we need to force release it
+										# This is a hack, but we need to ensure the lock is released
+										self._force_release_lock()
+								else:
+										# We acquired the lock, so release it
+										self.current_job_lock.release()
+								
+								# Mark job as not running
+								self.job_running = False
 						
 						return True
 				return False
 		
+		def _force_cleanup_browsers(self):
+				"""Force cleanup of all browser instances"""
+				for browser in self.browser_instances:
+						try:
+								if hasattr(browser, 'cleanup'):
+										browser.cleanup()
+						except Exception as e:
+								logging.error(f"Error cleaning up browser: {str(e)}")
+				
+				# Clear the list
+				self.browser_instances = []
+		
+		def _force_release_lock(self):
+				"""Force release the lock - use with extreme caution"""
+				try:
+						# This is a hack to force release the lock
+						# It's not thread-safe, but we're in a desperate situation
+						self.current_job_lock._owner = None
+						self.current_job_lock._count = 0
+						
+						logging.warning("Forced lock release - this is a last resort measure")
+				except Exception as e:
+						logging.error(f"Failed to force release lock: {str(e)}")
+		
 		def run_job(self, job_function, job_name="unnamed"):
 				"""Run a job with proper management"""
-				# Try to acquire the lock, but don't block if we can't
-				if not self.current_job_lock.acquire(blocking=False):
-						logging.warning(f"Another job is already running, stopping it first")
-						self.stop_current_job()
-						# Wait for the lock to be released with timeout
-						if not self.current_job_lock.acquire(blocking=True, timeout=10):
-								logging.error("Failed to acquire job lock after stopping previous job")
-								return
+				# Reset force release event
+				self.force_release_lock.clear()
 				
+				# Try to acquire the lock, but don't block if we can't
+				lock_acquired = False
 				try:
+						if not self.current_job_lock.acquire(blocking=False):
+								logging.warning(f"Another job is already running, stopping it first")
+								self.stop_current_job()
+								
+								# Wait for the lock to be released with timeout
+								lock_acquired = self.current_job_lock.acquire(blocking=True, timeout=5)
+								if not lock_acquired:
+										logging.error("Failed to acquire job lock after stopping previous job")
+										# Force release as a last resort
+										self._force_release_lock()
+										lock_acquired = self.current_job_lock.acquire(blocking=True, timeout=5)
+										if not lock_acquired:
+												logging.error("Failed to acquire job lock even after force release")
+												return
+						else:
+								lock_acquired = True
+						
 						# Reset the stop event
 						self.stop_event.clear()
 						self.job_running = True
@@ -466,10 +518,12 @@ class JobManager:
 				except Exception as e:
 						logging.exception(f"Error starting job '{job_name}': {str(e)}")
 						self.job_running = False
-						self.current_job_lock.release()
+						if lock_acquired:
+								self.current_job_lock.release()
 		
 		def _job_wrapper(self, job_function, job_name):
 				"""Wrapper to handle job execution and cleanup"""
+				lock_released = False
 				try:
 						# Set a global flag that can be checked by long-running processes
 						global JOB_STOP_EVENT
@@ -493,14 +547,26 @@ class JobManager:
 										logging.error(f"Error cleaning up browser: {str(e)}")
 						
 						self.browser_instances = []  # Clear the list
-						self.current_job_lock.release()
+						
+						# Check if we need to force release the lock
+						if self.force_release_lock.is_set():
+								logging.warning("Force release lock event detected during cleanup")
+								lock_released = True  # Mark as released since we're forcing it
+						
+						# Release the lock if we haven't already forced it
+						if not lock_released:
+								try:
+										self.current_job_lock.release()
+								except RuntimeError as e:
+										logging.error(f"Error releasing lock: {str(e)}")
+						
 						logging.info(f"Job '{job_name}' completed at {datetime.now().strftime('%H:%M:%S')}")
 		
 		def _should_stop_for_schedule(self):
 				"""Check if we should stop the current job for a scheduled job"""
 				# Check if any scheduled jobs need to run
 				now = datetime.now()
-				if (now - self.last_schedule_check).total_seconds() < 10:
+				if (now - self.last_schedule_check).total_seconds() < 5:
 						return False
 						
 				self.last_schedule_check = now
@@ -518,9 +584,9 @@ class JobManager:
 		
 		def check_scheduled_jobs(self):
 				"""Check if any scheduled jobs need to run and run them if needed"""
-				# Only check every 10 seconds to avoid excessive checking
+				# Only check every 5 seconds to avoid excessive checking
 				now = datetime.now()
-				if (now - self.last_schedule_check).total_seconds() < 10:
+				if (now - self.last_schedule_check).total_seconds() < 5:
 						return
 						
 				self.last_schedule_check = now
@@ -587,7 +653,7 @@ class ScheduleManager:
 										job_manager.check_scheduled_jobs()
 								
 								# Sleep for a short time before checking again
-								self.stop_event.wait(timeout=10)  # Check every 10 seconds
+								self.stop_event.wait(timeout=5)  # Check every 5 seconds
 						except Exception as e:
 								logging.error(f"Schedule check error: {str(e)}")
 								time.sleep(5)  # Wait before retrying on error

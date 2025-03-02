@@ -5,7 +5,7 @@ apprise: # 'apprise' is the name of the service used for notifications https://g
     incomplete-activity: true # set it to false to disable notifications for incomplete activities
     uncaught-exception: true # set it to false to disable notifications for uncaught exceptions
     login-code: true # set it to false to disable notifications for the temporary M$ Authenticator login code
-  summary: ALWAYS # set it to ALWAYS to always receive a summary about your points progression or errors, or to 
+  summary: NEVER # set it to ALWAYS to always receive a summary about your points progression or errors, or to 
     # NEVER to never receive a summary, even in case of an error. 
   urls: # add apprise urls here to receive notifications on the specified services :
     # https://github.com/caronc/apprise#supported-notifications
