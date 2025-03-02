@@ -10,7 +10,6 @@ from selenium.webdriver.remote.webelement import WebElement
 from src.browser import Browser
 from src.constants import REWARDS_URL
 from src.utils import CONFIG, sendNotification, getAnswerCode, active_sleep
-from main import check_for_stop_signal
 
 
 class Activities:
@@ -302,6 +301,7 @@ class Activities:
 		for activity in dailySetPromotions:
 			# Check for stop signal before each activity
 			try:
+				from main import check_for_stop_signal
 				if check_for_stop_signal():
 					logging.info("Stop signal detected, stopping daily set activities")
 					return
@@ -317,6 +317,7 @@ class Activities:
 		for activity in morePromotions:
 			# Check for stop signal before each activity
 			try:
+				from main import check_for_stop_signal
 				if check_for_stop_signal():
 					logging.info("Stop signal detected, stopping more promotions activities")
 					return

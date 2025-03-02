@@ -14,7 +14,6 @@ from selenium.webdriver.common.by import By
 
 from src.browser import Browser
 from src.utils import CONFIG, makeRequestsSession, getProjectRoot, active_sleep
-from main import check_for_stop_signal
 
 
 class RetriesStrategy(Enum):
@@ -152,6 +151,7 @@ class Searches:
 		while True:
 			# Check for stop signal
 			try:
+				from main import check_for_stop_signal
 				if check_for_stop_signal():
 					logging.info("Stop signal detected during Bing searches, breaking early")
 					break
@@ -207,6 +207,7 @@ class Searches:
 		for i in range(self.maxRetries + 1):
 			# Check for stop signal
 			try:
+				from main import check_for_stop_signal
 				if check_for_stop_signal():
 					logging.info("Stop signal detected during Bing search, breaking early")
 					return
