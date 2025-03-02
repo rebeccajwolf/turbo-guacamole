@@ -230,8 +230,8 @@ class Browser:
 			)
 		else:
 			# Obtain webdriver chrome driver version
-			# version = self.getChromeVersion()
-			# major = int(version.split(".")[0])
+			version = self.getChromeVersion()
+			major = int(version.split(".")[0])
 
 			driver = webdriver.Chrome(
 				options=options,
@@ -376,6 +376,7 @@ class Browser:
 		chrome_options = ChromeOptions()
 		chrome_options.add_argument("--headless=new")
 		chrome_options.add_argument("--no-sandbox")
+		chrome_options.add_argument("--disable-dev-shm-usage")
 		# driver = WebDriver(service=ChromeService("chromedriver"), options=chrome_options)
 		driver = WebDriver(options=chrome_options)
 		version = driver.capabilities["browserVersion"]
