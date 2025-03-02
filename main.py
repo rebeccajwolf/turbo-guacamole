@@ -12,9 +12,10 @@ import wget
 import zipfile
 import shutil
 import time
-from datetime import datetime
+import requests
+from datetime import datetime, timedelta
 from enum import Enum, auto
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 from pathlib import Path
 
 from src import (
@@ -43,6 +44,11 @@ def main():
 		retry_count = 0
 		while retry_count < max_retries:
 			try:
+				# Check if we should stop before processing each account
+				if check_for_stop_signal():
+					logging.info("Stop signal detected, stopping account processing")
+					return 0  # Return early with 0 points
+					
 				earned_points = executeBot(currentAccount)
 				previous_points = previous_points_data.get(currentAccount.email, 0)
 
@@ -86,6 +92,7 @@ def main():
 	# Save the current day's points data for the next day in the "logs" folder
 	save_previous_points_data(previous_points_data)
 	logging.info("[POINTS] Data saved for the next day.")
+	return previous_points_data.get(currentAccount.email, 0) if 'currentAccount' in locals() else 0
 
 
 def log_daily_points_to_csv(earned_points, points_difference):
@@ -114,8 +121,11 @@ def log_daily_points_to_csv(earned_points, points_difference):
 def downloadWebDriver():
 	"""Downloads and sets up chromedriver in the correct location"""
 	try:
+		url = 'https://chromedriver.storage.googleapis.com/LATEST_RELEASE'
+    response = requests.get(url)
+    version_number = response.text
 		# Download the zip file
-		download_url = "https://storage.googleapis.com/chrome-for-testing-public/128.0.6613.119/linux64/chromedriver-linux64.zip"
+		download_url = "https://chromedriver.storage.googleapis.com/" + version_number +"/chromedriver_linux64.zip"
 		latest_driver_zip = wget.download(download_url, 'chromedriver.zip')
 		
 		# Create a temporary directory for extraction
@@ -208,6 +218,10 @@ def executeBot(currentAccount):
 	goalPoints: int
 
 	try:
+		# Check for stop signal before starting browser sessions
+		if check_for_stop_signal():
+			logging.info("Stop signal detected before starting browser sessions")
+			return 0  # Return early with 0 points
 
 		if CONFIG.search.type in ("desktop", "both", None):
 			with Browser(mobile=False, account=currentAccount) as desktopBrowser:
@@ -217,9 +231,26 @@ def executeBot(currentAccount):
 				logging.info(
 					f"[POINTS] You have {formatNumber(startingPoints)} points on your account"
 				)
+				
+				# Check for stop signal before activities
+				if check_for_stop_signal():
+					logging.info("Stop signal detected before activities")
+					return startingPoints
+					
 				Activities(desktopBrowser).completeActivities()
+				
+				# Check for stop signal before punch cards
+				if check_for_stop_signal():
+					logging.info("Stop signal detected before punch cards")
+					return utils.getAccountPoints()
+					
 				PunchCards(desktopBrowser).completePunchCards()
 				# VersusGame(desktopBrowser).completeVersusGame()
+
+				# Check for stop signal before searches
+				if check_for_stop_signal():
+					logging.info("Stop signal detected before desktop searches")
+					return utils.getAccountPoints()
 
 				with Searches(desktopBrowser) as searches:
 					searches.bingSearches()
@@ -233,12 +264,29 @@ def executeBot(currentAccount):
 				accountPoints = utils.getAccountPoints()
 
 		if CONFIG.search.type in ("mobile", "both", None):
+			# Check for stop signal before mobile browser
+			if check_for_stop_signal():
+				logging.info("Stop signal detected before mobile browser")
+				return accountPoints if 'accountPoints' in locals() else startingPoints or 0
+				
 			with Browser(mobile=True, account=currentAccount) as mobileBrowser:
 				utils = mobileBrowser.utils
 				Login(mobileBrowser).login()
 				if startingPoints is None:
 					startingPoints = utils.getAccountPoints()
+					
+				# Check for stop signal before read to earn
+				if check_for_stop_signal():
+					logging.info("Stop signal detected before read to earn")
+					return utils.getAccountPoints()
+					
 				ReadToEarn(mobileBrowser).completeReadToEarn()
+				
+				# Check for stop signal before mobile searches
+				if check_for_stop_signal():
+					logging.info("Stop signal detected before mobile searches")
+					return utils.getAccountPoints()
+					
 				with Searches(mobileBrowser) as searches:
 					searches.bingSearches()
 
@@ -348,100 +396,270 @@ def save_previous_points_data(data):
 	with open(logs_directory / "previous_points_data.json", "w") as file:
 		json.dump(data, file, indent=4)
 
+class JobManager:
+		"""Manages job execution and ensures only one job runs at a time"""
+		
+		def __init__(self):
+				self.current_job_lock = Lock()
+				self.current_job_thread = None
+				self.stop_event = Event()
+				self.job_running = False
+				self.last_schedule_check = datetime.now()
+		
+		def is_job_running(self):
+				"""Check if a job is currently running"""
+				return self.job_running
+		
+		def stop_current_job(self):
+				"""Signal the current job to stop"""
+				if self.job_running:
+						logging.info("Stopping current job...")
+						self.stop_event.set()
+						# Wait for a short time to allow job to clean up
+						time.sleep(2)
+						return True
+				return False
+		
+		def run_job(self, job_function, job_name="unnamed"):
+				"""Run a job with proper management"""
+				# Try to acquire the lock, but don't block if we can't
+				if not self.current_job_lock.acquire(blocking=False):
+						logging.warning(f"Another job is already running, stopping it first")
+						self.stop_current_job()
+						# Wait for the lock to be released
+						self.current_job_lock.acquire()
+				
+				try:
+						# Reset the stop event
+						self.stop_event.clear()
+						self.job_running = True
+						
+						# Start the job in a new thread
+						self.current_job_thread = Thread(
+								target=self._job_wrapper,
+								args=(job_function, job_name),
+								daemon=True
+						)
+						self.current_job_thread.start()
+						
+						logging.info(f"Started new job '{job_name}' at {datetime.now().strftime('%H:%M:%S')}")
+				except Exception as e:
+						logging.exception(f"Error starting job '{job_name}': {str(e)}")
+						self.job_running = False
+						self.current_job_lock.release()
+		
+		def _job_wrapper(self, job_function, job_name):
+				"""Wrapper to handle job execution and cleanup"""
+				try:
+						# Set a global flag that can be checked by long-running processes
+						global JOB_STOP_EVENT
+						JOB_STOP_EVENT = self.stop_event
+						
+						# Run the job
+						job_function()
+				except Exception as e:
+						logging.exception(f"Error in job '{job_name}' execution: {str(e)}")
+				finally:
+						# Clean up
+						self.job_running = False
+						self.current_job_lock.release()
+						logging.info(f"Job '{job_name}' completed at {datetime.now().strftime('%H:%M:%S')}")
+		
+		def check_scheduled_jobs(self):
+				"""Check if any scheduled jobs need to run and run them if needed"""
+				# Only check every 30 seconds to avoid excessive checking
+				now = datetime.now()
+				if (now - self.last_schedule_check).total_seconds() < 30:
+						return
+						
+				self.last_schedule_check = now
+				
+				# Run pending jobs if any are due
+				if schedule.idle_seconds() == 0:
+						logging.info("Scheduled job time reached, running pending jobs")
+						schedule.run_pending()
+
+# Global job manager instance
+job_manager = JobManager()
+
+# Global stop event that can be checked by long-running processes
+JOB_STOP_EVENT = Event()
+
 class ScheduleManager:
-	def __init__(self):
-		self.running = True
-		self.stop_event = Event()
-		self._schedule_thread = None
+		def __init__(self):
+				self.running = True
+				self.stop_event = Event()
+				self._schedule_thread = None
+				self._schedule_check_thread = None
 
-	def start(self):
-		"""Start the schedule manager"""
-		self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
-		self._schedule_thread.start()
+		def start(self):
+				"""Start the schedule manager and schedule checker thread"""
+				# Start the main schedule thread
+				self._schedule_thread = Thread(target=self._run_schedule, daemon=True)
+				self._schedule_thread.start()
+				
+				# Start a separate thread to check for scheduled jobs during long-running operations
+				self._schedule_check_thread = Thread(target=self._check_schedule_during_jobs, daemon=True)
+				self._schedule_check_thread.start()
 
-	def stop(self):
-		"""Stop the schedule manager gracefully"""
-		self.running = False
-		self.stop_event.set()
-		if self._schedule_thread:
-			self._schedule_thread.join(timeout=5)
+		def stop(self):
+				"""Stop the schedule manager gracefully"""
+				self.running = False
+				self.stop_event.set()
+				if self._schedule_thread:
+						self._schedule_thread.join(timeout=5)
+				if self._schedule_check_thread:
+						self._schedule_check_thread.join(timeout=5)
 
-	def _run_schedule(self):
-		"""Run the schedule loop with proper error handling"""
-		while self.running and not self.stop_event.is_set():
-			try:
-				schedule.run_pending()
-				# Use event with timeout instead of sleep for more responsive shutdown
-				self.stop_event.wait(timeout=random.uniform(1, 2))
-			except Exception as e:
-				logging.error(f"Schedule error: {str(e)}")
-				time.sleep(5)  # Wait before retrying on error
+		def _run_schedule(self):
+				"""Run the schedule loop with proper error handling"""
+				while self.running and not self.stop_event.is_set():
+						try:
+								schedule.run_pending()
+								# Use event with timeout instead of sleep for more responsive shutdown
+								self.stop_event.wait(timeout=random.uniform(1, 2))
+						except Exception as e:
+								logging.error(f"Schedule error: {str(e)}")
+								time.sleep(5)  # Wait before retrying on error
+		
+		def _check_schedule_during_jobs(self):
+				"""Periodically check if scheduled jobs need to run, even during long-running jobs"""
+				while self.running and not self.stop_event.is_set():
+						try:
+								# Check if any scheduled jobs need to run
+								if job_manager.is_job_running():
+										job_manager.check_scheduled_jobs()
+								
+								# Sleep for a short time before checking again
+								self.stop_event.wait(timeout=10)  # Check every 10 seconds
+						except Exception as e:
+								logging.error(f"Schedule check error: {str(e)}")
+								time.sleep(5)  # Wait before retrying on error
 
 def setup_schedule():
-	"""Set up the schedule with randomized times"""
-	# Clear any existing jobs
-	schedule.clear()
+		"""Set up the schedule with randomized times"""
+		# Clear any existing jobs
+		schedule.clear()
 
-	# Add some randomization to job times to avoid detection
-	base_morning_hour = 5
-	base_evening_hour = 19
-	
-	# Add random minutes to base hours
-	morning_time = f"{base_morning_hour:02d}:{random.randint(0, 59):02d}"
-	evening_time = f"{base_evening_hour:02d}:{random.randint(0, 59):02d}"
+		# Add some randomization to job times to avoid detection
+		base_morning_hour = 5
+		base_evening_hour = 19
+		
+		# Add random minutes to base hours
+		morning_time = f"{base_morning_hour:02d}:{random.randint(0, 59):02d}"
+		evening_time = f"{base_evening_hour:02d}:{random.randint(0, 59):02d}"
 
-	# Schedule jobs
-	schedule.every().day.at(morning_time).do(run_job_with_activity)
-	schedule.every().day.at(evening_time).do(run_job_with_activity)
-	
-	logging.info(f"Scheduled jobs for {morning_time} and {evening_time}")
+		# Schedule jobs
+		schedule.every().day.at(morning_time).do(run_scheduled_job, "morning")
+		schedule.every().day.at(evening_time).do(run_scheduled_job, "evening")
+		
+		# For testing/debugging: Add a job that runs every few minutes
+		# This helps verify the scheduling system works without waiting for the actual times
+		if CONFIG.get('debug.quick_schedule'):
+				schedule.every(5).minutes.do(run_scheduled_job, "debug")
+		
+		logging.info(f"Scheduled jobs for {morning_time} and {evening_time}")
+		
+		# Check if we need to run a job immediately (if we're close to a scheduled time)
+		check_if_job_due_now()
+
+def check_if_job_due_now():
+		"""Check if a job is due to run now or very soon"""
+		now = datetime.now()
+		
+		# Get all jobs
+		all_jobs = schedule.get_jobs()
+		
+		for job in all_jobs:
+				# Get the next run time for this job
+				next_run = job.next_run
+				
+				# If the job is due within the next 5 minutes, run it now
+				if next_run and (next_run - now).total_seconds() < 300:  # 5 minutes = 300 seconds
+						logging.info(f"Job scheduled for {next_run.strftime('%H:%M')} is due soon, running now")
+						job.run()
+						return True
+		
+		return False
+
+def run_scheduled_job(job_type="scheduled"):
+		"""Run a scheduled job, stopping any currently running job first"""
+		logging.info(f"Starting {job_type} scheduled job")
+		
+		# Stop any currently running job
+		if job_manager.is_job_running():
+				logging.info(f"Stopping currently running job before starting {job_type} scheduled job")
+				job_manager.stop_current_job()
+		
+		# Start the new job
+		job_manager.run_job(run_job_with_activity, f"{job_type}_job")
+		return schedule.CancelJob  # Don't repeat this specific job
 
 def run_job_with_activity():
-	"""Priority-based job execution with container persistence"""
-	try:
-		main()
-	except Exception as e:
-		logging.exception("Job execution error")
-		sendNotification(
-			"⚠️ Error occurred, please check the log",
-			traceback.format_exc(),
-			e
-		)
+		"""Priority-based job execution with container persistence"""
+		try:
+				# Run the main job
+				main()
+		except Exception as e:
+				logging.exception("Job execution error")
+				sendNotification(
+						"⚠️ Error occurred, please check the log",
+						traceback.format_exc(),
+						e
+				)
+
+def check_for_stop_signal():
+		"""Function that can be called from long-running processes to check if they should stop"""
+		# Check if the job manager wants to stop the current job
+		if JOB_STOP_EVENT.is_set():
+				return True
+				
+		# Also check if any scheduled jobs need to run
+		job_manager.check_scheduled_jobs()
+		
+		# Re-check if stop event was set by the schedule check
+		return JOB_STOP_EVENT.is_set()
 
 def main_with_schedule():
-	"""Main function with proper schedule handling"""
-	try:
-		# Initial setup
-		setupLogging()
-		logging.info("Starting application...")
-
-		downloadWebDriver()
-		
-		# Run initial job
-		run_job_with_activity()
-		
-		# Set up and start scheduler
-		setup_schedule()
-		schedule_manager = ScheduleManager()
-		schedule_manager.start()
-		
-		# Wait for keyboard interrupt or other signals
+		"""Main function with proper schedule handling"""
 		try:
-			while True:
-				time.sleep(1)
-		except KeyboardInterrupt:
-			logging.info("Received shutdown signal, cleaning up...")
-		finally:
-			schedule_manager.stop()
-			
-	except Exception as e:
-		logging.exception("Fatal error occurred")
-		sendNotification(
-			"⚠️ Fatal error occurred",
-			traceback.format_exc(),
-			e
-		)
-		raise
+				# Initial setup
+				setupLogging()
+				logging.info("Starting application...")
+
+				downloadWebDriver()
+				
+				# Set up schedule first so we can check if a job is due now
+				setup_schedule()
+				
+				# Start the schedule manager
+				schedule_manager = ScheduleManager()
+				schedule_manager.start()
+				
+				# Run initial job only if no scheduled job is due now
+				if not check_if_job_due_now():
+						logging.info("No scheduled job due now, running initial job")
+						job_manager.run_job(run_job_with_activity, "initial_job")
+				
+				# Wait for keyboard interrupt or other signals
+				try:
+						while True:
+								time.sleep(1)
+				except KeyboardInterrupt:
+						logging.info("Received shutdown signal, cleaning up...")
+				finally:
+						# Stop any running job
+						job_manager.stop_current_job()
+						schedule_manager.stop()
+						
+		except Exception as e:
+				logging.exception("Fatal error occurred")
+				sendNotification(
+						"⚠️ Fatal error occurred",
+						traceback.format_exc(),
+						e
+				)
+				raise
 
 if __name__ == "__main__":
-	main_with_schedule()
+		main_with_schedule()

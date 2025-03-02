@@ -10,6 +10,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from src.browser import Browser
 from src.constants import REWARDS_URL
 from src.utils import CONFIG, sendNotification, getAnswerCode, active_sleep
+from main import check_for_stop_signal
 
 
 class Activities:
@@ -101,6 +102,15 @@ class Activities:
 			"return _w.rewardsQuizRenderInfo.numberOfOptions"
 		)
 		for _ in range(currentQuestionNumber, maxQuestions + 1):
+			# Check for stop signal
+			try:
+				from main import check_for_stop_signal
+				if check_for_stop_signal():
+					logging.info("Stop signal detected during quiz, breaking early")
+					return
+			except (ImportError, AttributeError):
+				pass
+				
 			if numberOfOptions == 8:
 				answers = []
 				for i in range(numberOfOptions):
@@ -139,6 +149,15 @@ class Activities:
 		).text[:-1][1:]
 		numberOfQuestions = max(int(s) for s in counter.split() if s.isdigit())
 		for question in range(numberOfQuestions):
+			# Check for stop signal
+			try:
+				from main import check_for_stop_signal
+				if check_for_stop_signal():
+					logging.info("Stop signal detected during ABC activity, breaking early")
+					return
+			except (ImportError, AttributeError):
+				pass
+				
 			element = self.webdriver.find_element(
 				By.ID, f"questionOptionChoice{question}{randint(0, 2)}"
 			)
@@ -162,6 +181,15 @@ class Activities:
 		)
 		sleep(randint(10, 15))
 		for _ in range(10):
+			# Check for stop signal
+			try:
+				from main import check_for_stop_signal
+				if check_for_stop_signal():
+					logging.info("Stop signal detected during This or That activity, breaking early")
+					return
+			except (ImportError, AttributeError):
+				pass
+				
 			correctAnswerCode = self.webdriver.execute_script(
 				"return _w.rewardsQuizRenderInfo.correctAnswer"
 			)
@@ -188,6 +216,15 @@ class Activities:
 
 	def doActivity(self, activity: dict, activities: list[dict]) -> None:
 		try:
+			# Check for stop signal before starting activity
+			try:
+				from main import check_for_stop_signal
+				if check_for_stop_signal():
+					logging.info("Stop signal detected before starting activity, skipping")
+					return
+			except (ImportError, AttributeError):
+				pass
+				
 			activityTitle = cleanupActivityTitle(activity["title"])
 			logging.debug(f"activityTitle={activityTitle}")
 			if activity["complete"] is True or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
@@ -263,6 +300,14 @@ class Activities:
 		dailySetPromotions = self.browser.utils.getDailySetPromotions()
 		self.browser.utils.goToRewards()
 		for activity in dailySetPromotions:
+			# Check for stop signal before each activity
+			try:
+				if check_for_stop_signal():
+					logging.info("Stop signal detected, stopping daily set activities")
+					return
+			except (ImportError, AttributeError):
+				pass
+				
 			self.doActivity(activity, dailySetPromotions)
 		logging.info("[DAILY SET] Done")
 
@@ -270,6 +315,14 @@ class Activities:
 		morePromotions: list[dict] = self.browser.utils.getMorePromotions()
 		self.browser.utils.goToRewards()
 		for activity in morePromotions:
+			# Check for stop signal before each activity
+			try:
+				if check_for_stop_signal():
+					logging.info("Stop signal detected, stopping more promotions activities")
+					return
+			except (ImportError, AttributeError):
+				pass
+				
 			self.doActivity(activity, morePromotions)
 		logging.info("[MORE PROMOS] Done")
 

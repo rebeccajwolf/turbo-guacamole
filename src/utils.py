@@ -397,6 +397,7 @@ class ActiveSleepManager:
 def active_sleep(seconds: float) -> None:
 	"""
 	Active sleep function that uses the scheduler system to keep the container alive.
+	Also checks for job stop signals periodically.
 	
 	Args:
 		seconds: Total number of seconds to sleep
@@ -416,9 +417,23 @@ def active_sleep(seconds: float) -> None:
 		# Schedule the wake-up
 		schedule.every(seconds).seconds.do(mark_complete)
 		
-		# Wait until sleep is complete
-		while not sleep_completed:
-			time.sleep(1)
+		# Wait until sleep is complete or stop signal received
+		end_time = time.time() + seconds
+		check_interval = min(1.0, seconds / 10)  # Check more frequently for shorter sleeps
+		
+		while not sleep_completed and time.time() < end_time:
+			# Check for stop signal frequently
+			try:
+				# Import here to avoid circular imports
+				from main import check_for_stop_signal
+				if check_for_stop_signal():
+					logging.info("Stop signal detected during active_sleep, breaking early")
+					break
+			except (ImportError, AttributeError):
+				# If function not available, continue with normal sleep
+				pass
+			
+			time.sleep(check_interval)
 			
 	finally:
 		# Cleanup
@@ -762,6 +777,12 @@ def argumentParser() -> Namespace:
 		action="store_true",
 		help="Set the logging level to DEBUG",
 	)
+	parser.add_argument(
+		"-qs",
+		"--quick-schedule",
+		action="store_true",
+		help="Enable quick scheduling for testing (runs every 5 minutes)",
+	)
 	return parser.parse_args()
 
 
@@ -795,6 +816,9 @@ def commandLineArgumentsAsConfig(args: Namespace) -> Config:
 	if args.searchtype:
 		config.search = Config()
 		config.search.type = args.searchtype
+	if args.quick_schedule:
+		config.debug = Config()
+		config.debug.quick_schedule = True
 	if args.email and args.password:
 		config.accounts = [Config(
 			email=args.email,
@@ -857,6 +881,9 @@ def createEmptyConfig(configPath: Path, config: Config) -> None:
 			'apprise': {
 				'urls': ['discord://{WebhookID}/{WebhookToken}']
 			},
+			'debug': {
+				'quick_schedule': False
+			},
 			'accounts': [
 				{
 					'email': 'Your Email 1',
@@ -916,6 +943,14 @@ def update_config_from_env():
 			# Clear existing urls and add new token
 			config['apprise']['urls'] = [token_env]
 			print("Updated Discord webhook URL from environment")
+
+		# Update quick schedule from QUICK_SCHEDULE env var
+		quick_schedule_env = os.getenv('QUICK_SCHEDULE')
+		if quick_schedule_env and quick_schedule_env.lower() in ('true', '1', 'yes'):
+			if not config.get('debug'):
+				config['debug'] = {}
+			config['debug']['quick_schedule'] = True
+			print("Enabled quick scheduling from environment")
 		
 		# Write updated config back to file
 		with open(config_path, 'w') as file:
