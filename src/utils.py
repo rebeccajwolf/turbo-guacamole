@@ -630,6 +630,7 @@ class Utils:
 			(By.ID, "iLooksGood"),
 			(By.ID, "idSIButton9"),
 			(By.ID, "bnp_btn_accept"),
+			(By.ID, "bnp_hfly_cta2"),
 			(By.ID, "acceptButton"),
 			(By.CSS_SELECTOR, ".dashboardPopUpPopUpSelectButton"),
 		]

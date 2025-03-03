@@ -50,6 +50,7 @@ class Activities:
 		res = True
 		# click poll option
 		while res:
+			self.browser.utils.tryDismissAllMessages()
 			choices = ['btoption0', 'btoption1']
 			self.webdriver.find_element(By.ID, choice(choices)).click()
 			time.sleep(7)
