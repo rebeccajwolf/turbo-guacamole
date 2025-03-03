@@ -227,7 +227,7 @@ class Activities:
 
 
 			with contextlib.suppress(TimeoutException):
-				searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q")
+				searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q", timeToWait=20)
 				self.browser.utils.click(searchbar)
 			if activityTitle in CONFIG.activities.search:
 				searchbar.send_keys(CONFIG.activities.search[activityTitle])

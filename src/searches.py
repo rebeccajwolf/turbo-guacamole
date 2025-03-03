@@ -218,13 +218,21 @@ class Searches:
 						term = next(termsCycle)
 						logging.debug(f"term={term}")
 						sleep(1)
-						searchbar.send_keys(term)
+						for char in term:
+							searchbar.send_keys(char)
+							sleep(random.uniform(0.2, 0.45))
 						sleep(1)
 						searchbar.submit()
+
 
 						pointsAfter = self.browser.utils.getAccountPoints()
 						if pointsBefore < pointsAfter:
 								sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+								for _ in range(3):  # Scroll down 3 times
+									self.webdriver.execute_script(
+											"window.scrollTo(0, document.body.scrollHeight);"
+									)
+									sleep(randint(7, 15)) # Random wait between scrolls
 								return
 
 						# todo
