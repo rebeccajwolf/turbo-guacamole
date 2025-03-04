@@ -324,37 +324,37 @@ class Browser:
 		return driver
 
 	def setupProfiles(self) -> Path:
-      """
-      Sets up the sessions profile for the chrome browser.
-      Creates separate directories for desktop and mobile sessions under the email directory.
+			"""
+			Sets up the sessions profile for the chrome browser.
+			Creates separate directories for desktop and mobile sessions under the email directory.
 
-      Returns:
-          Path
-      """
-      sessionsDir = getProjectRoot() / "sessions"
-      
-      # Create email-specific directory
-      emailDir = sessionsDir / self.email
-      emailDir.mkdir(parents=True, exist_ok=True)
-      
-      # Create separate directories for desktop and mobile
-      sessionType = "mobile" if self.mobile else "desktop"
-      typeDir = emailDir / sessionType
-      
-      # Create unique session ID using timestamp
-      sessionid = f"session_{int(time.time())}"
-      userSessionDir = typeDir / sessionid
-      userSessionDir.mkdir(parents=True, exist_ok=True)
-      
-      # Clean up old sessions of the same type
-      try:
-          for oldDir in typeDir.glob("session_*"):
-              if oldDir != userSessionDir:
-                  shutil.rmtree(oldDir)
-      except Exception as e:
-          logging.error(f"Error cleaning old session directories: {str(e)}")
+			Returns:
+					Path
+			"""
+			sessionsDir = getProjectRoot() / "sessions"
+			
+			# Create email-specific directory
+			emailDir = sessionsDir / self.email
+			emailDir.mkdir(parents=True, exist_ok=True)
+			
+			# Create separate directories for desktop and mobile
+			sessionType = "mobile" if self.mobile else "desktop"
+			typeDir = emailDir / sessionType
+			
+			# Create unique session ID using timestamp
+			sessionid = f"session_{int(time.time())}"
+			userSessionDir = typeDir / sessionid
+			userSessionDir.mkdir(parents=True, exist_ok=True)
+			
+			# Clean up old sessions of the same type
+			try:
+					for oldDir in typeDir.glob("session_*"):
+							if oldDir != userSessionDir:
+									shutil.rmtree(oldDir)
+			except Exception as e:
+					logging.error(f"Error cleaning old session directories: {str(e)}")
 
-      return userSessionDir
+			return userSessionDir
 
 
 	@staticmethod
