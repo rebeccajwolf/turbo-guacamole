@@ -45,7 +45,11 @@ class Browser:
 		self.proxy = CONFIG.browser.proxy
 		if not self.proxy and account.get('proxy'):
 			self.proxy = account.proxy
-		self.userDataDir = self.setupProfiles()
+		if self.mobile:
+				self.userDataDir = self.setupProfiles(clear_existing=True)
+		else:
+				self.userDataDir = self.setupProfiles(clear_existing=False)
+				
 		self.browserConfig = getBrowserConfig(self.userDataDir)
 		(
 			self.userAgent,
@@ -323,32 +327,41 @@ class Browser:
 
 		return driver
 
-	def setupProfiles(self) -> Path:
-				"""
-				Sets up the sessions profile for the chrome browser.
-				Uses the Email to create a unique profile for the session.
+	def setupProfiles(self, clear_existing: bool = False) -> Path:
+		"""
+		Sets up the sessions profile for the chrome browser.
+		Uses the Email to create a unique profile for the session.
 
-				Returns:
-						Path
-				"""
-				sessionsDir = getProjectRoot() / "sessions"
+		Args:
+				clear_existing: Whether to clear existing session data
 
-				# Create unique session ID using username and timestamp
-				sessionid = f"{self.email}_{int(time.time())}"
+		Returns:
+				Path
+		"""
+		sessionsDir = getProjectRoot() / "sessions"
 
-				# Create new session directory
-				userSessionDir = sessionsDir / sessionid
-				userSessionDir.mkdir(parents=True, exist_ok=True)
-				
-				# Clean up old session directories for this user
-				try:
-						for oldDir in sessionsDir.glob(f"{self.email}_*"):
-								if oldDir != userSessionDir:
+		# Create unique session ID using username and timestamp
+		sessionid = f"{self.email}_{int(time.time())}"
+
+		# Create new session directory
+		userSessionDir = sessionsDir / sessionid
+		userSessionDir.mkdir(parents=True, exist_ok=True)
+		
+		# Clean up old session directories for this user
+		try:
+				for oldDir in sessionsDir.glob(f"{self.email}_*"):
+						if oldDir != userSessionDir:
+								if clear_existing:
 										shutil.rmtree(oldDir)
-				except Exception as e:
-						logging.error(f"Error cleaning old session directories: {str(e)}")
+								else:
+										# Only remove if older than 24 hours
+										if time.time() - os.path.getctime(oldDir) > 86400:
+												shutil.rmtree(oldDir)
+		except Exception as e:
+				logging.error(f"Error cleaning old session directories: {str(e)}")
 
-				return userSessionDir
+		return userSessionDir
+
 
 	@staticmethod
 	def getLanguageCountry() -> tuple[str, str]:

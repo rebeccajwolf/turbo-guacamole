@@ -62,26 +62,34 @@ class Login:
 			pass
 
 	def login(self) -> None:
-		while True:
-			try:
-					if self.utils.isLoggedIn():
-							logging.info("[LOGIN] Already logged-in")
-							self.check_locked_user()
-							self.check_banned_user()
-					else:
-							logging.info("[LOGIN] Logging-in...")
-							self.execute_login()
-							logging.info("[LOGIN] Logged-in successfully!")
-							self.check_locked_user()
-							self.check_banned_user()
-					assert self.utils.isLoggedIn()
-					break
-			except TimeoutException:
-					continue
-			except Exception as e:
-					logging.error(f"Error during login: {e}")
-					self.webdriver.close()
-					raise
+		max_login_attempts = 27
+		attempt = 0
+		
+		while attempt < max_login_attempts:
+				try:
+						if self.utils.isLoggedIn():
+								logging.info("[LOGIN] Already logged-in")
+								self.check_locked_user()
+								self.check_banned_user()
+						else:
+								logging.info("[LOGIN] Logging-in... (Attempt %d/%d)", attempt + 1, max_login_attempts)
+								self.execute_login()
+								logging.info("[LOGIN] Logged-in successfully!")
+								self.check_locked_user()
+								self.check_banned_user()
+						assert self.utils.isLoggedIn()
+						break
+				except TimeoutException:
+						attempt += 1
+						if attempt >= max_login_attempts:
+								logging.error("[LOGIN] Max login attempts reached")
+								raise
+						logging.warning("[LOGIN] Timeout during login, retrying...")
+						time.sleep(5)  # Add delay between retries
+				except Exception as e:
+						logging.error(f"Error during login: {e}")
+						self.webdriver.close()
+						raise
 
 	def execute_login(self) -> None:
 		# Email field
