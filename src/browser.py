@@ -45,11 +45,7 @@ class Browser:
 		self.proxy = CONFIG.browser.proxy
 		if not self.proxy and account.get('proxy'):
 			self.proxy = account.proxy
-		if self.mobile:
-				self.userDataDir = self.setupProfiles(clear_existing=True)
-		else:
-				self.userDataDir = self.setupProfiles(clear_existing=False)
-				
+		self.userDataDir = self.setupProfiles()				
 		self.browserConfig = getBrowserConfig(self.userDataDir)
 		(
 			self.userAgent,
@@ -327,40 +323,38 @@ class Browser:
 
 		return driver
 
-	def setupProfiles(self, clear_existing: bool = False) -> Path:
-		"""
-		Sets up the sessions profile for the chrome browser.
-		Uses the Email to create a unique profile for the session.
+	def setupProfiles(self) -> Path:
+      """
+      Sets up the sessions profile for the chrome browser.
+      Creates separate directories for desktop and mobile sessions under the email directory.
 
-		Args:
-				clear_existing: Whether to clear existing session data
+      Returns:
+          Path
+      """
+      sessionsDir = getProjectRoot() / "sessions"
+      
+      # Create email-specific directory
+      emailDir = sessionsDir / self.email
+      emailDir.mkdir(parents=True, exist_ok=True)
+      
+      # Create separate directories for desktop and mobile
+      sessionType = "mobile" if self.mobile else "desktop"
+      typeDir = emailDir / sessionType
+      
+      # Create unique session ID using timestamp
+      sessionid = f"session_{int(time.time())}"
+      userSessionDir = typeDir / sessionid
+      userSessionDir.mkdir(parents=True, exist_ok=True)
+      
+      # Clean up old sessions of the same type
+      try:
+          for oldDir in typeDir.glob("session_*"):
+              if oldDir != userSessionDir:
+                  shutil.rmtree(oldDir)
+      except Exception as e:
+          logging.error(f"Error cleaning old session directories: {str(e)}")
 
-		Returns:
-				Path
-		"""
-		sessionsDir = getProjectRoot() / "sessions"
-
-		# Create unique session ID using username and timestamp
-		sessionid = f"{self.email}_{int(time.time())}"
-
-		# Create new session directory
-		userSessionDir = sessionsDir / sessionid
-		userSessionDir.mkdir(parents=True, exist_ok=True)
-		
-		# Clean up old session directories for this user
-		try:
-				for oldDir in sessionsDir.glob(f"{self.email}_*"):
-						if oldDir != userSessionDir:
-								if clear_existing:
-										shutil.rmtree(oldDir)
-								else:
-										# Only remove if older than 24 hours
-										if time.time() - os.path.getctime(oldDir) > 86400:
-												shutil.rmtree(oldDir)
-		except Exception as e:
-				logging.error(f"Error cleaning old session directories: {str(e)}")
-
-		return userSessionDir
+      return userSessionDir
 
 
 	@staticmethod
