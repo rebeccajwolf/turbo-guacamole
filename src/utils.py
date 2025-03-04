@@ -653,6 +653,15 @@ class Utils:
 		if closeTab:
 			self.closeCurrentTab()
 
+	def goToLatestWindow(self, timeToWait: float = 15) -> None:
+		"""
+		Switches to newest open window
+		:return:
+		"""
+		self.webdriver.switch_to.window(self.webdriver.window_handles[-1])
+		if timeToWait > 0:
+				time.sleep(timeToWait)
+
 	def closeCurrentTab(self) -> None:
 		self.webdriver.close()
 		time.sleep(0.5)
