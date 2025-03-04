@@ -69,9 +69,9 @@ class PunchCards:
 		incomplete_offers = self.webdriver.find_elements(By.XPATH, '//a[@class= "offer-cta"]/child::div[contains(@class, "btn-primary")]')
 		for _ in range(len(incomplete_offers)):
 			self.browser.utils.waitUntilClickable(By.XPATH, '//a[@class= "offer-cta"]/child::div[contains(@class, "btn-primary")]', 15)
-			self.webdriver.find_element(By.XPATH, '//a[@class= "offer-cta"]/child::div[contains(@class, "btn-primary")]').click()
+			self.webdriver.find_element(By.XPATH, "//a[@class='offer-cta']/div").click()
 			time.sleep(3)
-			self.browser.utils.goToLatestWindow(timeToWait=20)
+			self.browser.utils.switchToNewTab(timeToWait=20)
 			time.sleep(2)
 			self.doPunchCard()
 			time.sleep(2)
