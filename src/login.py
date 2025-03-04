@@ -64,24 +64,24 @@ class Login:
 	def login(self) -> None:
 		while True:
 			try:
-				if self.utils.isLoggedIn():
-					logging.info("[LOGIN] Already logged-in")
-					self.check_locked_user()
-					self.check_banned_user()
-				else:
-					logging.info("[LOGIN] Logging-in...")
-					self.execute_login()
-					logging.info("[LOGIN] Logged-in successfully!")
-					self.check_locked_user()
-					self.check_banned_user()
-				assert self.utils.isLoggedIn()
-				break
+					if self.utils.isLoggedIn():
+							logging.info("[LOGIN] Already logged-in")
+							self.check_locked_user()
+							self.check_banned_user()
+					else:
+							logging.info("[LOGIN] Logging-in...")
+							self.execute_login()
+							logging.info("[LOGIN] Logged-in successfully!")
+							self.check_locked_user()
+							self.check_banned_user()
+					assert self.utils.isLoggedIn()
+					break
 			except TimeoutException:
-				continue
+					continue
 			except Exception as e:
-				logging.error(f"Error during login: {e}")
-				self.browser.cleanup()
-				raise
+					logging.error(f"Error during login: {e}")
+					self.webdriver.close()
+					raise
 
 	def execute_login(self) -> None:
 		# Email field

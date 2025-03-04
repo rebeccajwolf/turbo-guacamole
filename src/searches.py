@@ -5,7 +5,7 @@ import shelve
 from datetime import date, timedelta
 from enum import Enum, auto
 from itertools import cycle
-from random import random, randint, shuffle
+from random import random, randint, shuffle, uniform
 from time import sleep
 from typing import Final
 
@@ -220,7 +220,7 @@ class Searches:
 						sleep(1)
 						for char in term:
 							searchbar.send_keys(char)
-							sleep(random.uniform(0.2, 0.45))
+							sleep(uniform(0.2, 0.45))
 						sleep(1)
 						searchbar.submit()
 
