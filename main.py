@@ -222,11 +222,11 @@ def executeBot(currentAccount):
 					f"[POINTS] You have {formatNumber(startingPoints)} points on your account"
 				)
 				# Activities(desktopBrowser).completeActivities()
-				PunchCards(desktopBrowser).completePunchCards()
+				# PunchCards(desktopBrowser).completePunchCards()
 				# VersusGame(desktopBrowser).completeVersusGame()
 
-				# with Searches(desktopBrowser) as searches:
-				# 	searches.bingSearches()
+				with Searches(desktopBrowser) as searches:
+					searches.bingSearches()
 
 				goalPoints = utils.getGoalPoints()
 				goalTitle = utils.getGoalTitle()
