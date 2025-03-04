@@ -199,7 +199,7 @@ class Browser:
 		options.add_argument("--disable-search-engine-choice-screen")  # 153
 		options.add_argument("--disable-component-update")
 		options.add_argument("--ozone-platform=wayland")
-		options.add_argument("--enable-wayland-ime")
+		# options.add_argument("--enable-wayland-ime")
 		options.add_argument("--enable-features=UseOzonePlatform")
 		options.add_argument("--disable-background-networking")
 		options.add_argument('--disable-background-timer-throttling')
