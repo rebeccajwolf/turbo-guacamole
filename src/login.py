@@ -1,6 +1,7 @@
 import argparse
 import contextlib
 import logging
+import time
 from argparse import Namespace
 
 from pyotp import TOTP
