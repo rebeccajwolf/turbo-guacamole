@@ -71,7 +71,7 @@ class PunchCards:
 			self.browser.utils.waitUntilClickable(By.XPATH, '//a[@class= "offer-cta"]/child::div[contains(@class, "btn-primary")]', 15)
 			self.webdriver.find_element(By.XPATH, '//a[@class= "offer-cta"]/child::div[contains(@class, "btn-primary")]').click()
 			time.sleep(3)
-			self.browser.utils.switchToNewTab()
+			self.browser.utils.switchToNewTab(timeToWait=20)
 			time.sleep(2)
 			self.doPunchCard()
 			time.sleep(2)
