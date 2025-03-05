@@ -137,7 +137,7 @@ class Browser:
 			except Exception as e:
 					logging.warning(f"Error cleaning up chrome processes: {e}")
 
-		def cleanup(self):
+	def cleanup(self):
 			"""Clean up browser resources with proper process termination"""
 			if self.webdriver:
 					try:
