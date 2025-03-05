@@ -50,6 +50,8 @@ class Activities:
 		res = True
 		# click poll option
 		while res:
+			time.sleep(3)
+			self.browser.utils.waitUntilClickable(By.ID, 'btoption0', timeToWait=20)
 			choices = ['btoption0', 'btoption1']
 			self.webdriver.find_element(By.ID, choice(choices)).click()
 			time.sleep(7)

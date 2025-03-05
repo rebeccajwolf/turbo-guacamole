@@ -4,6 +4,7 @@ import logging
 import os
 import random
 import time
+import shutil
 import threading
 from pathlib import Path
 from types import TracebackType
@@ -323,21 +324,31 @@ class Browser:
 		return driver
 
 	def setupProfiles(self) -> Path:
-		"""
-		Sets up the sessions profile for the chrome browser.
-		Uses the email to create a unique profile for the session.
+			"""
+			Sets up the sessions profile for the chrome browser.
+			Uses the username to create a unique profile for the session.
 
-		Returns:
-			Path
-		"""
-		sessionsDir = getProjectRoot() / "sessions"
+			Returns:
+					Path
+			"""
+			sessionsDir = getProjectRoot() / "sessions"
 
-		# Concatenate email and browser type for a plain text session ID
-		sessionid = f"{self.email}"
+			# Create unique session ID using username and timestamp
+			sessionid = f"{self.email}_{int(time.time())}"
 
-		sessionsDir = sessionsDir / sessionid
-		sessionsDir.mkdir(parents=True, exist_ok=True)
-		return sessionsDir
+			# Create new session directory
+			userSessionDir = sessionsDir / sessionid
+			userSessionDir.mkdir(parents=True, exist_ok=True)
+			
+			# Clean up old session directories for this user
+			try:
+					for oldDir in sessionsDir.glob(f"{self.email}_*"):
+							if oldDir != userSessionDir:
+									shutil.rmtree(oldDir)
+			except Exception as e:
+					logging.error(f"Error cleaning old session directories: {str(e)}")
+
+			return userSessionDir
 
 	@staticmethod
 	def getLanguageCountry() -> tuple[str, str]:
@@ -376,8 +387,9 @@ class Browser:
 		chrome_options = ChromeOptions()
 		chrome_options.add_argument("--headless=new")
 		chrome_options.add_argument("--no-sandbox")
-		driver = WebDriver(service=ChromeService(getProjectRoot() / "chromedriver"), options=chrome_options)
-		# driver = WebDriver(options=chrome_options)
+		chrome_options.add_argument("--disable-gpu")
+		# driver = WebDriver(service=ChromeService(getProjectRoot() / "chromedriver"), options=chrome_options)
+		driver = WebDriver(options=chrome_options)
 		version = driver.capabilities["browserVersion"]
 
 		driver.close()
