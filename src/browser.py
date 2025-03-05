@@ -344,21 +344,21 @@ class Browser:
 		return driver
 
 	def setup_profiles(self) -> Path:
-        """
-        Sets up the sessions profile for the chrome browser.
-        Uses the username to create a unique profile for the session.
+				"""
+				Sets up the sessions profile for the chrome browser.
+				Uses the username to create a unique profile for the session.
 
-        Returns:
-            Path
-        """
-        current_path = Path(__file__)
-        parent = current_path.parent.parent
-        sessions_dir = parent / "sessions"
+				Returns:
+						Path
+				"""
+				current_path = Path(__file__)
+				parent = current_path.parent.parent
+				sessions_dir = parent / "sessions"
 
-        session_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, self.email)
-        sessions_dir = sessions_dir / str(session_uuid) / self.browser_type
-        sessions_dir.mkdir(parents=True, exist_ok=True)
-        return sessions_dir
+				session_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, self.email)
+				sessions_dir = sessions_dir / str(session_uuid) / self.browser_type
+				sessions_dir.mkdir(parents=True, exist_ok=True)
+				return sessions_dir
 
 
 	@staticmethod
