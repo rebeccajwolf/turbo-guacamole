@@ -6,6 +6,7 @@ import random
 import time
 import threading
 import shutil
+import psutil
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Type
@@ -45,6 +46,8 @@ class Browser:
 		self.proxy = CONFIG.browser.proxy
 		if not self.proxy and account.get('proxy'):
 			self.proxy = account.proxy
+		# Clean up any existing chrome processes
+		self.kill_existing_chrome_processes()
 		self.userDataDir = self.setupProfiles()				
 		self.browserConfig = getBrowserConfig(self.userDataDir)
 		(
@@ -121,37 +124,53 @@ class Browser:
 	# 			logging.debug(f"Heartbeat error (will retry): {str(e)}")
 	# 			time.sleep(2)  # Short delay before retry
 
-	def cleanup(self):
-		"""Clean up browser resources with proper process termination"""
-		if self.webdriver:
+	def kill_existing_chrome_processes(self):
+			"""Kill any existing chrome processes to ensure clean startup"""
 			try:
-				# Store current window handle
-				current_handle = self.webdriver.current_window_handle
-				
-				# Close any extra tabs/windows except main
-				all_handles = self.webdriver.window_handles
-				for handle in all_handles:
-					if handle != current_handle:
-						self.webdriver.switch_to.window(handle)
-						self.webdriver.close()
-				
-				# Switch back to main window and close it
-				self.webdriver.switch_to.window(current_handle)
-				self.webdriver.close()
-				
+					for proc in psutil.process_iter(['pid', 'name']):
+							if 'chromium' in proc.info['name'].lower():
+									try:
+											proc.kill()
+									except (psutil.NoSuchProcess, psutil.AccessDenied):
+											pass
+					time.sleep(2)  # Give processes time to cleanup
 			except Exception as e:
-				logging.error(f"Error during browser cleanup: {str(e)}")
-			finally:
-				try:
-					# Ensure webdriver is fully quit
-					self.webdriver.quit()
-					
-					# Small delay to ensure processes are terminated
-					time.sleep(1)
-				except Exception as e:
-					logging.error(f"Error during browser quit: {str(e)}")
-				self.webdriver = None
-				self.utils = None
+					logging.warning(f"Error cleaning up chrome processes: {e}")
+
+		def cleanup(self):
+			"""Clean up browser resources with proper process termination"""
+			if self.webdriver:
+					try:
+							# Store current window handle
+							current_handle = self.webdriver.current_window_handle
+							
+							# Close any extra tabs/windows except main
+							all_handles = self.webdriver.window_handles
+							for handle in all_handles:
+									if handle != current_handle:
+											self.webdriver.switch_to.window(handle)
+											self.webdriver.close()
+							
+							# Switch back to main window and close it
+							self.webdriver.switch_to.window(current_handle)
+							self.webdriver.close()
+							
+					except Exception as e:
+							logging.error(f"Error during browser cleanup: {str(e)}")
+					finally:
+							try:
+									# Ensure webdriver is fully quit
+									self.webdriver.quit()
+									
+									# Kill any remaining chrome processes
+									self.kill_existing_chrome_processes()
+									
+									# Small delay to ensure processes are terminated
+									time.sleep(2)
+							except Exception as e:
+									logging.error(f"Error during browser quit: {str(e)}")
+							self.webdriver = None
+							self.utils = None
 
 	def __enter__(self):
 		logging.debug("in __enter__")
@@ -329,7 +348,7 @@ class Browser:
 			Uses the username to create a unique profile for the session.
 
 			Returns:
-					Path
+							Path
 			"""
 			sessionsDir = getProjectRoot() / "sessions"
 
@@ -344,7 +363,8 @@ class Browser:
 			try:
 					for oldDir in sessionsDir.glob(f"{self.email}_*"):
 							if oldDir != userSessionDir:
-									shutil.rmtree(oldDir)
+									shutil.rmtree(oldDir, ignore_errors=True)
+					time.sleep(1)  # Give filesystem time to cleanup
 			except Exception as e:
 					logging.error(f"Error cleaning old session directories: {str(e)}")
 
