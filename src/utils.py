@@ -468,7 +468,8 @@ def active_sleep(seconds: float) -> None:
 def retry_on_500_errors(function):
 	@wraps(function)
 	def wrapper(*args, **kwargs):
-		driver: WebDriver = args[0]
+		utils_instance: Utils = args[0]  # First arg is Utils instance
+		driver = utils_instance.webdriver  # Get the WebDriver instance
 		error_codes = ["HTTP ERROR 500", "HTTP ERROR 502",
 									 "HTTP ERROR 503", "HTTP ERROR 504", "HTTP ERROR 505"]
 		status_code = "-"
