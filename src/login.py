@@ -118,7 +118,7 @@ class Login:
 						attempt += 1
 						if attempt >= max_login_attempts:
 								logging.error("[LOGIN] Max login attempts reached")
-								logging.error(f"Error during login: {e}")
+								logging.error(f"Error during login: {e1}")
 								self.webdriver.close()
 								raise
 						logging.warning(f"[LOGIN] Timeout during login: {e1}, retrying...")
