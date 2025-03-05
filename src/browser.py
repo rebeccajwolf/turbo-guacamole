@@ -7,6 +7,7 @@ import time
 import threading
 import shutil
 import psutil
+import uuid
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Type
@@ -48,7 +49,7 @@ class Browser:
 			self.proxy = account.proxy
 		# Clean up any existing chrome processes
 		self.kill_existing_chrome_processes()
-		self.userDataDir = self.setupProfiles()				
+		self.userDataDir = self.setup_profiles()				
 		self.browserConfig = getBrowserConfig(self.userDataDir)
 		(
 			self.userAgent,
@@ -216,7 +217,7 @@ class Browser:
 		options.add_argument("--disable-features=PrivacySandboxSettings4")
 		options.add_argument("--disable-http2")
 		options.add_argument("--disable-search-engine-choice-screen")  # 153
-		options.add_argument("--disable-component-update")
+		# options.add_argument("--disable-component-update")
 		options.add_argument("--ozone-platform=wayland")
 		# options.add_argument("--enable-wayland-ime")
 		options.add_argument("--enable-features=UseOzonePlatform")
@@ -342,33 +343,22 @@ class Browser:
 
 		return driver
 
-	def setupProfiles(self) -> Path:
-			"""
-			Sets up the sessions profile for the chrome browser.
-			Uses the username to create a unique profile for the session.
+	def setup_profiles(self) -> Path:
+        """
+        Sets up the sessions profile for the chrome browser.
+        Uses the username to create a unique profile for the session.
 
-			Returns:
-							Path
-			"""
-			sessionsDir = getProjectRoot() / "sessions"
+        Returns:
+            Path
+        """
+        current_path = Path(__file__)
+        parent = current_path.parent.parent
+        sessions_dir = parent / "sessions"
 
-			# Create unique session ID using username and timestamp
-			sessionid = f"{self.email}_{int(time.time())}"
-
-			# Create new session directory
-			userSessionDir = sessionsDir / sessionid
-			userSessionDir.mkdir(parents=True, exist_ok=True)
-			
-			# Clean up old session directories for this user
-			try:
-					for oldDir in sessionsDir.glob(f"{self.email}_*"):
-							if oldDir != userSessionDir:
-									shutil.rmtree(oldDir, ignore_errors=True)
-					time.sleep(1)  # Give filesystem time to cleanup
-			except Exception as e:
-					logging.error(f"Error cleaning old session directories: {str(e)}")
-
-			return userSessionDir
+        session_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, self.email)
+        sessions_dir = sessions_dir / str(session_uuid) / self.browser_type
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+        return sessions_dir
 
 
 	@staticmethod

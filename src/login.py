@@ -123,10 +123,11 @@ class Login:
 								raise
 						logging.warning(f"[LOGIN] Timeout during login: {e1}, retrying...")
 						time.sleep(5)  # Add delay between retries
+						self.webdriver.refresh()
 						
 	def execute_login(self) -> None:
 		# Email field
-		emailField = self.utils.waitUntilClickable(By.NAME, "loginfmt", 20)
+		emailField = self.utils.waitUntilClickable(By.ID, 'i0116', 40)
 		logging.info("[LOGIN] Entering email...")
 		emailField.click()
 		emailField.send_keys(self.browser.email)
