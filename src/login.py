@@ -101,7 +101,7 @@ class Login:
 		while attempt < max_login_attempts:
 				try:
 						# Wait for viewport to be ready for both mobile and desktop
-						self.wait_for_viewport()
+						# self.wait_for_viewport()
 						if self.utils.isLoggedIn():
 								logging.info("[LOGIN] Already logged-in")
 								self.check_locked_user()
