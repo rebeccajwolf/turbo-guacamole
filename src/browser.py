@@ -324,13 +324,7 @@ class Browser:
 		return driver
 
 	def setupProfiles(self) -> Path:
-			"""
-			Sets up the sessions profile for the chrome browser.
-			Creates separate directories for desktop and mobile sessions under the email directory.
-
-			Returns:
-					Path
-			"""
+			"""Sets up the sessions profile for the chrome browser."""
 			sessionsDir = getProjectRoot() / "sessions"
 			
 			# Create email-specific directory
@@ -340,20 +334,20 @@ class Browser:
 			# Create separate directories for desktop and mobile
 			sessionType = "mobile" if self.mobile else "desktop"
 			typeDir = emailDir / sessionType
+			typeDir.mkdir(parents=True, exist_ok=True)
 			
-			# Create unique session ID using timestamp
-			sessionid = f"session_{int(time.time())}"
-			userSessionDir = typeDir / sessionid
-			userSessionDir.mkdir(parents=True, exist_ok=True)
-			
-			# Clean up old sessions of the same type
+			# Clean up old sessions
 			try:
 					for oldDir in typeDir.glob("session_*"):
-							if oldDir != userSessionDir:
-									shutil.rmtree(oldDir)
+							shutil.rmtree(oldDir)
 			except Exception as e:
-					logging.error(f"Error cleaning old session directories: {str(e)}")
-
+					logging.error(f"Error cleaning old sessions: {str(e)}")
+					
+			# Create new session directory
+			sessionId = f"session_{int(time.time())}"
+			userSessionDir = typeDir / sessionId
+			userSessionDir.mkdir(parents=True, exist_ok=True)
+			
 			return userSessionDir
 
 

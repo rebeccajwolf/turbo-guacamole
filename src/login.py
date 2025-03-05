@@ -95,7 +95,7 @@ class Login:
 				logging.warning(f"{browser_type.capitalize()} viewport setup timeout, proceeding anyway...")
 
 	def login(self) -> None:
-		max_login_attempts = 27
+		max_login_attempts = 5
 		attempt = 0
 		
 		while attempt < max_login_attempts:
