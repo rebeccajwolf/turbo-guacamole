@@ -478,7 +478,7 @@ def retry_on_500_errors(function):
 				try:
 						status_code = driver.execute_script(
 								"return document.readyState;")
-						if status_code == "complete" and not any(error_code in driver.page_source for error_code in error_codes):
+						if status_code in ("complete", "interactive") and not any(error_code in driver.page_source for error_code in error_codes):
 								return result
 						elif status_code == "loading":
 								return result
