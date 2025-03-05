@@ -197,6 +197,7 @@ class Browser:
 		options.add_argument("--disable-features=PrivacySandboxSettings4")
 		options.add_argument("--disable-http2")
 		options.add_argument("--disable-search-engine-choice-screen")  # 153
+		options.add_argument("--no-first-run")
 		options.add_argument("--disable-component-update")
 		options.add_argument("--ozone-platform=wayland")
 		# options.add_argument("--enable-wayland-ime")
@@ -320,7 +321,7 @@ class Browser:
 		# 			break
 					
 		# threading.Thread(target=session_keeper, daemon=True).start()
-		
+
 		return driver
 
 	def setupProfiles(self) -> Path:
