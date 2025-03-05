@@ -122,7 +122,7 @@ class Login:
 								self.webdriver.close()
 								raise
 						logging.warning(f"[LOGIN] Timeout during login: {e1}, retrying...")
-						logging.info(f"[LOGIN] Current URL {self.webdriver.current_url}")
+						logging.info(f"[LOGIN] Current URL {self.webdriver.page_source}")
 						time.sleep(5)  # Add delay between retries
 						self.webdriver.refresh()
 						
