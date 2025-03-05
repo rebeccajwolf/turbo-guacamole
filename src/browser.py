@@ -356,7 +356,7 @@ class Browser:
 				sessions_dir = parent / "sessions"
 
 				session_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, self.email)
-				sessions_dir = sessions_dir / str(session_uuid) / self.browser_type
+				sessions_dir = sessions_dir / str(session_uuid) / self.browserType
 				sessions_dir.mkdir(parents=True, exist_ok=True)
 				return sessions_dir
 
