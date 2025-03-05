@@ -216,6 +216,7 @@ def executeBot(currentAccount):
 		if CONFIG.search.type in ("desktop", "both", None):
 			with Browser(mobile=False, account=currentAccount) as desktopBrowser:
 				utils = desktopBrowser.utils
+				time.sleep(7)
 				Login(desktopBrowser).login()
 				startingPoints = utils.getAccountPoints()
 				logging.info(
@@ -239,6 +240,7 @@ def executeBot(currentAccount):
 		if CONFIG.search.type in ("mobile", "both", None):
 			with Browser(mobile=True, account=currentAccount) as mobileBrowser:
 				utils = mobileBrowser.utils
+				time.sleep(7)
 				Login(mobileBrowser).login()
 				if startingPoints is None:
 					startingPoints = utils.getAccountPoints()

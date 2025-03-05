@@ -121,8 +121,6 @@ class Login:
 								raise
 						logging.warning("[LOGIN] Timeout during login, retrying...")
 						time.sleep(5)  # Add delay between retries
-						self.webdriver.refresh()
-						time.sleep(3)
 				except Exception as e:
 						logging.error(f"Error during login: {e}")
 						self.webdriver.close()
