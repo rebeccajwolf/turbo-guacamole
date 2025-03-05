@@ -153,31 +153,32 @@ class Searches:
 								desktopAndMobile=True
 						)
 						logging.info(f"[BING] Remaining searches={desktopAndMobileRemaining}")
-						if (
-								self.browser.browserType == "desktop"
-								and desktopAndMobileRemaining.desktop == 0
-						) or (
-								self.browser.browserType == "mobile"
-								and desktopAndMobileRemaining.mobile == 0
-						):
-								break
+						# if (
+						# 		self.browser.browserType == "desktop"
+						# 		and desktopAndMobileRemaining.desktop == 0
+						# ) or (
+						# 		self.browser.browserType == "mobile"
+						# 		and desktopAndMobileRemaining.mobile == 0
+						# ):
+						# 		break
 
-						if desktopAndMobileRemaining.getTotal() > len(self.googleTrendsShelf):
-								# self.googleTrendsShelf.clear()  # Maybe needed?
-								logging.debug(
-										f"google_trends before load = {list(self.googleTrendsShelf.items())}"
-								)
-								trends = self.getGoogleTrends(desktopAndMobileRemaining.getTotal())
-								shuffle(trends)
-								for trend in trends:
-										self.googleTrendsShelf[trend] = None
-								logging.debug(
-										f"google_trends after load = {list(self.googleTrendsShelf.items())}"
-								)
+						# if desktopAndMobileRemaining.getTotal() > len(self.googleTrendsShelf):
+						# 		# self.googleTrendsShelf.clear()  # Maybe needed?
+						# 		logging.debug(
+						# 				f"google_trends before load = {list(self.googleTrendsShelf.items())}"
+						# 		)
+						# 		trends = self.getGoogleTrends(desktopAndMobileRemaining.getTotal())
+						# 		shuffle(trends)
+						# 		for trend in trends:
+						# 				self.googleTrendsShelf[trend] = None
+						# 		logging.debug(
+						# 				f"google_trends after load = {list(self.googleTrendsShelf.items())}"
+						# 		)
 
-						self.bingSearch()
-						del self.googleTrendsShelf[list(self.googleTrendsShelf.keys())[0]]
-						sleep(randint(10, 15))
+						# self.bingSearch()
+						# del self.googleTrendsShelf[list(self.googleTrendsShelf.keys())[0]]
+						# sleep(randint(10, 15))
+						break
 
 				logging.info(
 						f"[BING] Finished {self.browser.browserType.capitalize()} Edge Bing searches !"

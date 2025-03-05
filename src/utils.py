@@ -639,7 +639,7 @@ class Utils:
 	def isLoggedIn(self) -> bool:
 		if self.getBingInfo()["isRewardsUser"]:  # faster, if it works
 			return True
-		self.webdriver.get(
+		self.goToURL(
 			"https://rewards.bing.com/Signin/"
 		)  # changed site to allow bypassing when M$ blocks access to login.live.com randomly
 		with contextlib.suppress(TimeoutException):
