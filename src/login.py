@@ -114,18 +114,16 @@ class Login:
 								self.check_banned_user()
 						assert self.utils.isLoggedIn()
 						break
-				except TimeoutException as e1:
+				except Exception as e1:
 						attempt += 1
 						if attempt >= max_login_attempts:
 								logging.error("[LOGIN] Max login attempts reached")
+								logging.error(f"Error during login: {e}")
+								self.webdriver.close()
 								raise
 						logging.warning(f"[LOGIN] Timeout during login: {e1}, retrying...")
 						time.sleep(5)  # Add delay between retries
-				except Exception as e:
-						logging.error(f"Error during login: {e}")
-						self.webdriver.close()
-						raise
-
+						
 	def execute_login(self) -> None:
 		# Email field
 		emailField = self.utils.waitUntilClickable(By.NAME, "loginfmt", 20)
