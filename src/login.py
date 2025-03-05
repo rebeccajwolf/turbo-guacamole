@@ -7,10 +7,14 @@ from argparse import Namespace
 from pyotp import TOTP
 from selenium.common import TimeoutException
 from selenium.common.exceptions import (
+	ElementClickInterceptedException,
 	ElementNotInteractableException,
 	NoSuchElementException,
+	StaleElementReferenceException,
 )
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from undetected_chromedriver import Chrome
 
 from src.browser import Browser
@@ -62,12 +66,42 @@ class Login:
 		except (ElementNotInteractableException, NoSuchElementException):
 			pass
 
+	def wait_for_viewport(self, timeout=30):
+		"""Wait for viewport to be properly set based on browser type"""
+		try:
+				def check_viewport():
+						viewport_width = self.webdriver.execute_script(
+								"return window.innerWidth;"
+						)
+						if self.browser.mobile:
+								# Mobile viewport should be less than 800px
+								return viewport_width < 800
+						else:
+								# Desktop viewport should be greater than or equal to 1024px
+								return viewport_width >= 1024
+
+				WebDriverWait(self.webdriver, timeout).until(lambda d: check_viewport())
+				
+				# Get final viewport size for logging
+				viewport_width = self.webdriver.execute_script("return window.innerWidth;")
+				viewport_height = self.webdriver.execute_script("return window.innerHeight;")
+				logging.debug(f"Viewport size: {viewport_width}x{viewport_height} "
+										 f"({'mobile' if self.browser.mobile else 'desktop'})")
+				
+				time.sleep(2)  # Small delay to ensure viewport is stable
+				
+		except TimeoutException:
+				browser_type = 'mobile' if self.browser.mobile else 'desktop'
+				logging.warning(f"{browser_type.capitalize()} viewport setup timeout, proceeding anyway...")
+
 	def login(self) -> None:
 		max_login_attempts = 27
 		attempt = 0
 		
 		while attempt < max_login_attempts:
 				try:
+						# Wait for viewport to be ready for both mobile and desktop
+						self.wait_for_viewport()
 						if self.utils.isLoggedIn():
 								logging.info("[LOGIN] Already logged-in")
 								self.check_locked_user()
@@ -87,6 +121,8 @@ class Login:
 								raise
 						logging.warning("[LOGIN] Timeout during login, retrying...")
 						time.sleep(5)  # Add delay between retries
+						self.webdriver.refresh()
+						time.sleep(3)
 				except Exception as e:
 						logging.error(f"Error during login: {e}")
 						self.webdriver.close()
