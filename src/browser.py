@@ -324,31 +324,31 @@ class Browser:
 		return driver
 
 	def setupProfiles(self) -> Path:
-      """
-      Sets up the sessions profile for the chrome browser.
-      Uses the username to create a unique profile for the session.
+			"""
+			Sets up the sessions profile for the chrome browser.
+			Uses the username to create a unique profile for the session.
 
-      Returns:
-          Path
-      """
-      sessionsDir = getProjectRoot() / "sessions"
+			Returns:
+					Path
+			"""
+			sessionsDir = getProjectRoot() / "sessions"
 
-      # Create unique session ID using username and timestamp
-      sessionid = f"{self.email}_{int(time.time())}"
+			# Create unique session ID using username and timestamp
+			sessionid = f"{self.email}_{int(time.time())}"
 
-      # Create new session directory
-      userSessionDir = sessionsDir / sessionid
-      userSessionDir.mkdir(parents=True, exist_ok=True)
-      
-      # Clean up old session directories for this user
-      try:
-          for oldDir in sessionsDir.glob(f"{self.email}_*"):
-              if oldDir != userSessionDir:
-                  shutil.rmtree(oldDir)
-      except Exception as e:
-          logging.error(f"Error cleaning old session directories: {str(e)}")
+			# Create new session directory
+			userSessionDir = sessionsDir / sessionid
+			userSessionDir.mkdir(parents=True, exist_ok=True)
+			
+			# Clean up old session directories for this user
+			try:
+					for oldDir in sessionsDir.glob(f"{self.email}_*"):
+							if oldDir != userSessionDir:
+									shutil.rmtree(oldDir)
+			except Exception as e:
+					logging.error(f"Error cleaning old session directories: {str(e)}")
 
-      return userSessionDir
+			return userSessionDir
 
 
 	@staticmethod
