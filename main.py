@@ -242,7 +242,7 @@ def executeBot(currentAccount):
 				Login(mobileBrowser).login()
 				if startingPoints is None:
 					startingPoints = utils.getAccountPoints()
-				# ReadToEarn(mobileBrowser).completeReadToEarn()
+				ReadToEarn(mobileBrowser).completeReadToEarn()
 				with Searches(mobileBrowser) as searches:
 					searches.bingSearches()
 

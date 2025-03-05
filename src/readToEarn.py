@@ -49,8 +49,8 @@ class ReadToEarn:
         )
 
         # Get Referer URL from webdriver
+        self.webdriver.get(authorization_url)
         while True:
-            self.webdriver.get(authorization_url)
             time.sleep(180)
             logging.info("[READ TO EARN] Waiting for Login")
             if (
