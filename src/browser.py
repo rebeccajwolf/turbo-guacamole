@@ -320,7 +320,7 @@ class Browser:
 		# 			break
 					
 		# threading.Thread(target=session_keeper, daemon=True).start()
-		driver.set_page_load_timeout(self.maxtimeout)
+		
 		return driver
 
 	def setupProfiles(self) -> Path:
