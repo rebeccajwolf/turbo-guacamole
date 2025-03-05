@@ -267,8 +267,8 @@ class Browser:
 				options=options,
 				seleniumwire_options=seleniumwireOptions,
 				user_data_dir=self.userDataDir.as_posix(),
-				# driver_executable_path="chromedriver",
-				version_main=major,
+				driver_executable_path="chromedriver",
+				# version_main=major,
 			)
 
 		seleniumLogger = logging.getLogger("seleniumwire")
