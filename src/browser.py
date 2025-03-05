@@ -234,6 +234,7 @@ class Browser:
 		options.add_argument('--disable-features=IsolateOrigins,site-per-process')
 		options.add_argument("--disable-web-security")
 		options.add_argument("--disable-site-isolation-trials")
+		options.add_argument("--disable-setuid-sandbox")
 		options.page_load_strategy = "eager"
 
 		seleniumwireOptions: dict[str, Any] = {
