@@ -128,7 +128,7 @@ class Login:
 						
 	def execute_login(self) -> None:
 		# Email field
-		emailField = self.utils.waitUntilClickable(By.ID, 'i0116', 40)
+		emailField = self.utils.waitUntilVisible(By.ID, 'i0116', 40)
 		logging.info("[LOGIN] Entering email...")
 		emailField.click()
 		emailField.send_keys(self.browser.email)

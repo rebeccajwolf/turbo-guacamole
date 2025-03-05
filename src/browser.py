@@ -7,7 +7,6 @@ import time
 import threading
 import shutil
 import psutil
-import uuid
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Type
@@ -49,7 +48,7 @@ class Browser:
 			self.proxy = account.proxy
 		# Clean up any existing chrome processes
 		self.kill_existing_chrome_processes()
-		self.userDataDir = self.setup_profiles()				
+		self.userDataDir = self.setupProfiles()				
 		self.browserConfig = getBrowserConfig(self.userDataDir)
 		(
 			self.userAgent,
@@ -129,10 +128,13 @@ class Browser:
 			"""Kill any existing chrome processes to ensure clean startup"""
 			try:
 					for proc in psutil.process_iter(['pid', 'name']):
-							if 'chromium' in proc.info['name'].lower():
+							# More specific process name matching
+							proc_name = proc.info['name'].lower()
+							if any(name in proc_name for name in ['chrome', 'chromium', 'chromedriver']):
 									try:
 											proc.kill()
-									except (psutil.NoSuchProcess, psutil.AccessDenied):
+											proc.wait(timeout=5)  # Wait for process to terminate
+									except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
 											pass
 					time.sleep(2)  # Give processes time to cleanup
 			except Exception as e:
@@ -165,6 +167,10 @@ class Browser:
 									
 									# Kill any remaining chrome processes
 									self.kill_existing_chrome_processes()
+									
+									# Clean up the user data directory
+									if hasattr(self, 'userDataDir') and self.userDataDir.exists():
+											shutil.rmtree(self.userDataDir, ignore_errors=True)
 									
 									# Small delay to ensure processes are terminated
 									time.sleep(2)
@@ -343,22 +349,35 @@ class Browser:
 
 		return driver
 
-	def setup_profiles(self) -> Path:
+	def setupProfiles(self) -> Path:
 				"""
 				Sets up the sessions profile for the chrome browser.
 				Uses the username to create a unique profile for the session.
 
 				Returns:
-						Path
+								Path
 				"""
-				current_path = Path(__file__)
-				parent = current_path.parent.parent
-				sessions_dir = parent / "sessions"
+				sessionsDir = getProjectRoot() / "sessions"
 
-				session_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, self.email)
-				sessions_dir = sessions_dir / str(session_uuid) / self.browserType
-				sessions_dir.mkdir(parents=True, exist_ok=True)
-				return sessions_dir
+				# Clean up old session directories first
+				if sessionsDir.exists():
+						try:
+								shutil.rmtree(sessionsDir, ignore_errors=True)
+								time.sleep(1)  # Wait for cleanup
+						except Exception as e:
+								logging.error(f"Error cleaning sessions directory: {str(e)}")
+
+				# Create fresh sessions directory
+				sessionsDir.mkdir(parents=True, exist_ok=True)
+
+				# Create unique session ID using username and timestamp
+				sessionid = f"{self.email}_{int(time.time())}"
+
+				# Create new session directory
+				userSessionDir = sessionsDir / sessionid
+				userSessionDir.mkdir(parents=True, exist_ok=True)
+
+				return userSessionDir
 
 
 	@staticmethod
