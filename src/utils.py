@@ -20,6 +20,7 @@ import os
 import yaml
 from apprise import Apprise
 from requests import Session
+from functools import wraps
 from requests.adapters import HTTPAdapter
 from selenium.common import (
 	ElementClickInterceptedException,
@@ -464,6 +465,35 @@ def active_sleep(seconds: float) -> None:
 #         time.sleep(1)
 
 
+def retry_on_500_errors(function):
+  @wraps(function)
+  def wrapper(*args, **kwargs):
+    driver: WebDriver = args[0]
+    error_codes = ["HTTP ERROR 500", "HTTP ERROR 502",
+                   "HTTP ERROR 503", "HTTP ERROR 504", "HTTP ERROR 505"]
+    status_code = "-"
+    result = function(*args, **kwargs)
+    while True:
+        try:
+            status_code = driver.execute_script(
+                "return document.readyState;")
+            if status_code == "complete" and not any(error_code in driver.page_source for error_code in error_codes):
+                return result
+            elif status_code == "loading":
+                return result
+            else:
+                raise Exception("Page not loaded")
+        except Exception as e:
+            # Check if the page contains 500 errors
+            if any(error_code in driver.page_source for error_code in error_codes):
+                driver.refresh()  # Recursively refresh
+            else:
+                raise Exception(
+                    f"another exception occurred during handling 500 errors with status '{status_code}': {e}")
+  return wrapper
+
+
+
 def split_message(message: str, max_length: int = 1900) -> List[str]:
 	"""Split a message into parts that fit within Discord's character limit"""
 	if len(message) <= max_length:
@@ -502,6 +532,11 @@ class Utils:
 			pylocale.setlocale(pylocale.LC_NUMERIC, locale)
 
 		# self.config = self.loadConfig()
+
+
+	@retry_on_500_errors
+	def goToURL(self, url: str):
+	    self.webdriver.get(url)
 
 	def waitUntilVisible(
 		self, by: str, selector: str, timeToWait: float = 10
@@ -603,7 +638,7 @@ class Utils:
 	def isLoggedIn(self) -> bool:
 		if self.getBingInfo()["isRewardsUser"]:  # faster, if it works
 			return True
-		self.webdriver.get(
+		self.goToURL(
 			"https://rewards.bing.com/Signin/"
 		)  # changed site to allow bypassing when M$ blocks access to login.live.com randomly
 		with contextlib.suppress(TimeoutException):
