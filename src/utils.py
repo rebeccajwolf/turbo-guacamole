@@ -6,7 +6,7 @@ import re
 import time
 import inspect
 from argparse import Namespace, ArgumentParser
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 import random
 import schedule
@@ -14,6 +14,9 @@ from itertools import cycle
 from threading import Event, Thread
 from typing import Any, List, Self
 from copy import deepcopy
+import base64
+from flask import send_file
+from io import BytesIO
 
 import requests
 import os
@@ -724,6 +727,57 @@ class Utils:
 				expected_conditions.element_to_be_clickable(element)
 			)
 			element.click()
+
+def take_screenshot(webdriver: WebDriver, name: str = None) -> str:
+    """
+    Takes a screenshot of the current browser window and saves it
+    
+    Args:
+        webdriver: The WebDriver instance
+        name: Optional name for the screenshot. If not provided, uses timestamp
+        
+    Returns:
+        str: Path to the saved screenshot
+    """
+    try:
+        screenshots_dir = getProjectRoot() / "screenshots"
+        screenshots_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{name}_{timestamp}.png" if name else f"screenshot_{timestamp}.png"
+        filepath = screenshots_dir / filename
+        
+        # Take screenshot
+        webdriver.save_screenshot(str(filepath))
+        logging.info(f"Screenshot saved: {filepath}")
+        return str(filepath)
+        
+    except Exception as e:
+        logging.error(f"Error taking screenshot: {str(e)}")
+        return None
+
+def get_screenshot_b64(webdriver: WebDriver) -> str:
+    """
+    Takes a screenshot and returns it as a base64 encoded string
+    
+    Args:
+        webdriver: The WebDriver instance
+        
+    Returns:
+        str: Base64 encoded screenshot
+    """
+    try:
+        # Take screenshot
+        screenshot = webdriver.get_screenshot_as_png()
+        
+        # Convert to base64
+        b64_screenshot = base64.b64encode(screenshot).decode()
+        return b64_screenshot
+        
+    except Exception as e:
+        logging.error(f"Error taking screenshot: {str(e)}")
+        return None
 
 
 def argumentParser() -> Namespace:

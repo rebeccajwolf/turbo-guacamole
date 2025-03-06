@@ -18,7 +18,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from undetected_chromedriver import Chrome
 
 from src.browser import Browser
-from src.utils import sendNotification, CONFIG
+from src.utils import sendNotification, CONFIG, take_screenshot
 from src.exceptions import *
 
 class Login:
@@ -123,6 +123,7 @@ class Login:
 								raise
 						logging.warning(f"[LOGIN] Timeout during login: {e1}, retrying...")
 						logging.info(f"[LOGIN] Current URL {self.webdriver.title}")
+						take_screenshot(self.webdriver, "login_page")
 						time.sleep(5)  # Add delay between retries
 						self.webdriver.refresh()
 						
