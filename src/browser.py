@@ -235,6 +235,8 @@ class Browser:
 		options.add_argument("--disable-web-security")
 		options.add_argument("--disable-site-isolation-trials")
 		options.add_argument("--disable-setuid-sandbox")
+		 options.add_argument("--no-zygote")  # Disable the zygote process
+		options.add_argument("--disable-ipc-flooding-protection")  # Prevent IPC issues
 		options.page_load_strategy = "eager"
 
 		seleniumwireOptions: dict[str, Any] = {
@@ -379,6 +381,7 @@ class Browser:
 				# Create new session directory
 				userSessionDir = sessionsDir / sessionid
 				userSessionDir.mkdir(parents=True, exist_ok=True)
+				time.sleep(3)
 
 				return userSessionDir
 
