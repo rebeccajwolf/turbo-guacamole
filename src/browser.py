@@ -222,20 +222,14 @@ class Browser:
 		options.add_argument("--disable-features=PrivacySandboxSettings4")
 		options.add_argument("--disable-http2")
 		options.add_argument("--disable-search-engine-choice-screen")  # 153
-		# options.add_argument("--disable-component-update")
+		options.add_argument("--disable-component-update")
 		options.add_argument("--ozone-platform=wayland")
-		# options.add_argument("--enable-wayland-ime")
+		options.add_argument("--enable-wayland-ime")
 		options.add_argument("--enable-features=UseOzonePlatform")
-		# options.add_argument("--disable-background-networking")
-		# options.add_argument('--disable-background-timer-throttling')
-		# options.add_argument('--disable-backgrounding-occluded-windows')
-		# options.add_argument('--disable-renderer-backgrounding')
-		options.add_argument('--disable-features=IsolateOrigins,site-per-process')
-		options.add_argument("--disable-web-security")
-		options.add_argument("--disable-site-isolation-trials")
-		options.add_argument("--disable-setuid-sandbox")
-		options.add_argument("--no-zygote")  # Disable the zygote process
-		options.add_argument("--disable-ipc-flooding-protection")  # Prevent IPC issues
+		options.add_argument("--disable-background-networking")
+		options.add_argument('--disable-background-timer-throttling')
+		options.add_argument('--disable-backgrounding-occluded-windows')
+		options.add_argument('--disable-renderer-backgrounding')
 		options.page_load_strategy = "eager"
 
 		seleniumwireOptions: dict[str, Any] = {
@@ -267,7 +261,7 @@ class Browser:
 			driver = webdriver.Chrome(
 				options=options,
 				seleniumwire_options=seleniumwireOptions,
-				user_data_dir=self.userDataDir.as_posix(),
+				# user_data_dir=self.userDataDir.as_posix(),
 				driver_executable_path="chromedriver",
 				# version_main=major,
 			)
