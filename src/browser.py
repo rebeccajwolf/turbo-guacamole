@@ -7,6 +7,7 @@ import time
 import threading
 import shutil
 import psutil
+import subprocess
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Type
@@ -45,6 +46,9 @@ class Browser:
 				self.proxy = CONFIG.browser.proxy
 				if not self.proxy and account.get('proxy'):
 						self.proxy = account.proxy
+
+				# Reset Weston before starting new browser session
+				self.reset_weston()
 						
 				# Clean up any existing chrome processes
 				self.kill_existing_chrome_processes()
@@ -62,28 +66,80 @@ class Browser:
 				self.utils = Utils(self.webdriver)
 				logging.debug("out __init__")
 
+		def reset_weston(self):
+				"""Reset Weston compositor for clean display server state"""
+				try:
+						# Kill existing Weston process
+						for proc in psutil.process_iter(['pid', 'name']):
+								if 'weston' in proc.info['name'].lower():
+										try:
+												process = psutil.Process(proc.info["pid"])
+												process.terminate()
+												process.wait(timeout=3)
+										except (psutil.NoSuchProcess, psutil.TimeoutExpired):
+												try:
+														process.kill()
+												except psutil.NoSuchProcess:
+														pass
+
+						# Wait for process cleanup
+						time.sleep(2)
+
+						# Clean up runtime directory
+						runtime_dir = os.environ.get('XDG_RUNTIME_DIR', '/tmp/runtime-user')
+						wayland_socket = os.path.join(runtime_dir, os.environ.get('WAYLAND_DISPLAY', 'wayland-1'))
+						
+						if os.path.exists(wayland_socket):
+								os.remove(wayland_socket)
+
+						# Ensure runtime directory exists with correct permissions
+						os.makedirs(runtime_dir, mode=0o700, exist_ok=True)
+
+						# Start new Weston instance
+						weston_cmd = [
+								'/usr/bin/weston',
+								'--backend=headless-backend.so',
+								'--width=1920',
+								'--height=1080',
+								'--socket=wayland-1'
+						]
+						
+						subprocess.Popen(weston_cmd)
+
+						# Wait for Weston to start
+						timeout = 10
+						start_time = time.time()
+						while not os.path.exists(wayland_socket):
+								if time.time() - start_time > timeout:
+										raise TimeoutError("Weston failed to start")
+								time.sleep(0.5)
+
+						# Additional wait to ensure Weston is ready
+						time.sleep(2)
+
+						logging.info("Weston reset successful")
+
+				except Exception as e:
+						logging.error(f"Error resetting Weston: {str(e)}")
+						raise
+
 		def kill_existing_chrome_processes(self):
 				"""Kill any existing chrome processes to ensure clean startup"""
 				try:
-						# First try graceful shutdown
 						for proc in psutil.process_iter(['pid', 'name']):
 								proc_name = proc.info['name'].lower()
 								if any(name in proc_name for name in ['chrome', 'chromium', 'chromedriver']):
 										try:
 												process = psutil.Process(proc.info["pid"])
-												# Send SIGTERM first
 												process.terminate()
 												process.wait(timeout=3)
 										except (psutil.NoSuchProcess, psutil.TimeoutExpired):
 												try:
-														# If SIGTERM fails, use SIGKILL
 														process.kill()
 												except psutil.NoSuchProcess:
 														pass
-										except Exception as e:
-												logging.warning(f"Error terminating process: {e}")
 						
-						time.sleep(1)  # Brief pause to allow processes to cleanup
+						time.sleep(1)
 				except Exception as e:
 						logging.warning(f"Error cleaning up chrome processes: {e}")
 
@@ -95,7 +151,7 @@ class Browser:
 				if sessionsDir.exists():
 						try:
 								shutil.rmtree(sessionsDir)
-								time.sleep(1)  # Wait for cleanup
+								time.sleep(1)
 						except Exception as e:
 								logging.error(f"Error cleaning sessions directory: {str(e)}")
 
@@ -367,44 +423,3 @@ class Browser:
 				driver.quit()
 
 				return version
-
-
-		def getRemainingSearches(
-				self, desktopAndMobile: bool = False
-		) -> RemainingSearches | int:
-				bingInfo = self.utils.getDashboardData()
-				searchPoints = 1
-				counters = bingInfo["userStatus"]["counters"]
-				pcSearch: dict = counters["pcSearch"][0]
-				pointProgressMax: int = pcSearch["pointProgressMax"]
-
-				searchPoints: int
-				if pointProgressMax in [30, 90, 102]:
-						searchPoints = 3
-				elif pointProgressMax in [50, 150] or pointProgressMax >= 170:
-						searchPoints = 5
-				pcPointsRemaining = pcSearch["pointProgressMax"] - pcSearch["pointProgress"]
-				assert pcPointsRemaining % searchPoints == 0
-				remainingDesktopSearches: int = int(pcPointsRemaining / searchPoints)
-
-				activeLevel = bingInfo["userStatus"]["levelInfo"]["activeLevel"]
-				remainingMobileSearches: int = 0
-				if activeLevel == "Level2":
-						mobileSearch: dict = counters["mobileSearch"][0]
-						mobilePointsRemaining = (
-								mobileSearch["pointProgressMax"] - mobileSearch["pointProgress"]
-						)
-						assert mobilePointsRemaining % searchPoints == 0
-						remainingMobileSearches = int(mobilePointsRemaining / searchPoints)
-				elif activeLevel == "Level1":
-						pass
-				else:
-						raise AssertionError(f"Unknown activeLevel: {activeLevel}")
-
-				if desktopAndMobile:
-						return RemainingSearches(
-								desktop=remainingDesktopSearches, mobile=remainingMobileSearches
-						)
-				if self.mobile:
-						return remainingMobileSearches
-				return remainingDesktopSearches
