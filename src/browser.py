@@ -48,7 +48,7 @@ class Browser:
 						self.proxy = account.proxy
 						
 				# Initialize Wayland environment
-				self.setup_wayland_environment()
+				# self.setup_wayland_environment()
 				
 				# Clean up any existing chrome processes
 				self.kill_existing_chrome_processes()
@@ -167,14 +167,14 @@ class Browser:
 												shutil.rmtree(self.userDataDir, ignore_errors=True)
 										
 										# Clean up Wayland socket
-										runtime_dir = os.environ.get('XDG_RUNTIME_DIR', '/tmp/runtime-user')
-										wayland_display = os.environ.get('WAYLAND_DISPLAY', 'wayland-1')
-										wayland_socket = os.path.join(runtime_dir, wayland_display)
-										if os.path.exists(wayland_socket):
-												try:
-														os.remove(wayland_socket)
-												except Exception as e:
-														logging.warning(f"Failed to remove Wayland socket: {e}")
+										# runtime_dir = os.environ.get('XDG_RUNTIME_DIR', '/tmp/runtime-user')
+										# wayland_display = os.environ.get('WAYLAND_DISPLAY', 'wayland-1')
+										# wayland_socket = os.path.join(runtime_dir, wayland_display)
+										# if os.path.exists(wayland_socket):
+										# 		try:
+										# 				os.remove(wayland_socket)
+										# 		except Exception as e:
+										# 				logging.warning(f"Failed to remove Wayland socket: {e}")
 										
 										time.sleep(2)
 								except Exception as e:
@@ -369,18 +369,18 @@ class Browser:
 						time.sleep(0.5)
 
 				# Verify Wayland connection
-				try:
-						driver.execute_script("""
-								return new Promise((resolve, reject) => {
-										if (navigator.userAgent.includes('Wayland')) {
-												resolve(true);
-										} else {
-												reject('Not running on Wayland');
-										}
-								});
-						""")
-				except Exception as e:
-						logging.warning(f"Wayland verification failed: {e}")
+				# try:
+				# 		driver.execute_script("""
+				# 				return new Promise((resolve, reject) => {
+				# 						if (navigator.userAgent.includes('Wayland')) {
+				# 								resolve(true);
+				# 						} else {
+				# 								reject('Not running on Wayland');
+				# 						}
+				# 				});
+				# 		""")
+				# except Exception as e:
+				# 		logging.warning(f"Wayland verification failed: {e}")
 
 				return driver
 
