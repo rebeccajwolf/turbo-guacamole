@@ -292,7 +292,7 @@ class Browser:
 					]
 
 
-				 for command, params in cdp_commands:
+				for command, params in cdp_commands:
 						if target_id:
 								self.webdriver.execute_cdp_cmd(
 										f'Target.sendMessageToTarget',
