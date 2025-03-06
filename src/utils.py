@@ -643,7 +643,7 @@ class Utils:
 		if self.getBingInfo()["isRewardsUser"]:  # faster, if it works
 			return True
 		self.webdriver.get(
-			"https://rewards.bing.com/?redref=amc"
+			"https://rewards.bing.com/Signin/"
 		)  # changed site to allow bypassing when M$ blocks access to login.live.com randomly
 		with contextlib.suppress(TimeoutException):
 			self.waitUntilVisible(
@@ -671,7 +671,14 @@ class Utils:
 			(By.ID, "bnp_btn_accept"),
 			(By.ID, "bnp_hfly_cta2"),
 			(By.ID, "acceptButton"),
+			(By.ID, "reward_pivot_earn"),
 			(By.CSS_SELECTOR, ".dashboardPopUpPopUpSelectButton"),
+			(By.CSS_SELECTOR, ".ext-secondary.ext-button"),
+			(By.CSS_SELECTOR, ".maybe-later"),
+			(By.CSS_SELECTOR, ".c-glyph.glyph-cancel"),
+			(By.CSS_SELECTOR, ".ms-Button.ms-Button--primary"),
+			(By.XPATH, '//div[@id="cookieConsentContainer"]//button[contains(text(), "Accept")]'),
+
 		]
 		for byValue in byValues:
 			dismissButtons = []
@@ -729,55 +736,55 @@ class Utils:
 			element.click()
 
 def take_screenshot(webdriver: WebDriver, name: str = None) -> str:
-    """
-    Takes a screenshot of the current browser window and saves it
-    
-    Args:
-        webdriver: The WebDriver instance
-        name: Optional name for the screenshot. If not provided, uses timestamp
-        
-    Returns:
-        str: Path to the saved screenshot
-    """
-    try:
-        screenshots_dir = getProjectRoot() / "screenshots"
-        screenshots_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Generate filename
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{name}_{timestamp}.png" if name else f"screenshot_{timestamp}.png"
-        filepath = screenshots_dir / filename
-        
-        # Take screenshot
-        webdriver.save_screenshot(str(filepath))
-        logging.info(f"Screenshot saved: {filepath}")
-        return str(filepath)
-        
-    except Exception as e:
-        logging.error(f"Error taking screenshot: {str(e)}")
-        return None
+		"""
+		Takes a screenshot of the current browser window and saves it
+		
+		Args:
+				webdriver: The WebDriver instance
+				name: Optional name for the screenshot. If not provided, uses timestamp
+				
+		Returns:
+				str: Path to the saved screenshot
+		"""
+		try:
+				screenshots_dir = getProjectRoot() / "screenshots"
+				screenshots_dir.mkdir(parents=True, exist_ok=True)
+				
+				# Generate filename
+				timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+				filename = f"{name}_{timestamp}.png" if name else f"screenshot_{timestamp}.png"
+				filepath = screenshots_dir / filename
+				
+				# Take screenshot
+				webdriver.save_screenshot(str(filepath))
+				logging.info(f"Screenshot saved: {filepath}")
+				return str(filepath)
+				
+		except Exception as e:
+				logging.error(f"Error taking screenshot: {str(e)}")
+				return None
 
 def get_screenshot_b64(webdriver: WebDriver) -> str:
-    """
-    Takes a screenshot and returns it as a base64 encoded string
-    
-    Args:
-        webdriver: The WebDriver instance
-        
-    Returns:
-        str: Base64 encoded screenshot
-    """
-    try:
-        # Take screenshot
-        screenshot = webdriver.get_screenshot_as_png()
-        
-        # Convert to base64
-        b64_screenshot = base64.b64encode(screenshot).decode()
-        return b64_screenshot
-        
-    except Exception as e:
-        logging.error(f"Error taking screenshot: {str(e)}")
-        return None
+		"""
+		Takes a screenshot and returns it as a base64 encoded string
+		
+		Args:
+				webdriver: The WebDriver instance
+				
+		Returns:
+				str: Base64 encoded screenshot
+		"""
+		try:
+				# Take screenshot
+				screenshot = webdriver.get_screenshot_as_png()
+				
+				# Convert to base64
+				b64_screenshot = base64.b64encode(screenshot).decode()
+				return b64_screenshot
+				
+		except Exception as e:
+				logging.error(f"Error taking screenshot: {str(e)}")
+				return None
 
 
 def argumentParser() -> Namespace:

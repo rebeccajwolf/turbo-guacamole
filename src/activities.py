@@ -54,6 +54,7 @@ class Activities:
 			try:
 				sleep(3)
 				self.browser.utils.waitUntilClickable(By.ID, 'btoption0', timeToWait=20)
+				take_screenshot(self.webdriver, "Poll_Quiz")
 				choices = ['btoption0', 'btoption1']
 				self.webdriver.find_element(By.ID, choice(choices)).click()
 				sleep(7)

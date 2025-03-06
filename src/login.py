@@ -66,66 +66,27 @@ class Login:
 		except (ElementNotInteractableException, NoSuchElementException):
 			pass
 
-	def wait_for_viewport(self, timeout=30):
-		"""Wait for viewport to be properly set based on browser type"""
-		try:
-				def check_viewport():
-						viewport_width = self.webdriver.execute_script(
-								"return window.innerWidth;"
-						)
-						if self.browser.mobile:
-								# Mobile viewport should be less than 800px
-								return viewport_width < 800
-						else:
-								# Desktop viewport should be greater than or equal to 1024px
-								return viewport_width >= 1024
-
-				WebDriverWait(self.webdriver, timeout).until(lambda d: check_viewport())
-				
-				# Get final viewport size for logging
-				viewport_width = self.webdriver.execute_script("return window.innerWidth;")
-				viewport_height = self.webdriver.execute_script("return window.innerHeight;")
-				logging.debug(f"Viewport size: {viewport_width}x{viewport_height} "
-										 f"({'mobile' if self.browser.mobile else 'desktop'})")
-				
-				time.sleep(2)  # Small delay to ensure viewport is stable
-				
-		except TimeoutException:
-				browser_type = 'mobile' if self.browser.mobile else 'desktop'
-				logging.warning(f"{browser_type.capitalize()} viewport setup timeout, proceeding anyway...")
-
 	def login(self) -> None:
-		max_login_attempts = 5
-		attempt = 0
-		
-		while attempt < max_login_attempts:
+		while True:
 				try:
-						# Wait for viewport to be ready for both mobile and desktop
-						# self.wait_for_viewport()
 						if self.utils.isLoggedIn():
 								logging.info("[LOGIN] Already logged-in")
 								self.check_locked_user()
 								self.check_banned_user()
 						else:
-								logging.info("[LOGIN] Logging-in... (Attempt %d/%d)", attempt + 1, max_login_attempts)
+								logging.info("[LOGIN] Logging-in...")
 								self.execute_login()
 								logging.info("[LOGIN] Logged-in successfully!")
 								self.check_locked_user()
 								self.check_banned_user()
 						assert self.utils.isLoggedIn()
 						break
-				except Exception as e1:
-						attempt += 1
-						if attempt >= max_login_attempts:
-								logging.error("[LOGIN] Max login attempts reached")
-								logging.error(f"Error during login: {e1}")
-								self.webdriver.close()
-								raise
-						logging.warning(f"[LOGIN] Timeout during login: {e1}, retrying...")
-						logging.info(f"[LOGIN] Current URL {self.webdriver.title}")
-						take_screenshot(self.webdriver, f"login_page")
-						time.sleep(5)  # Add delay between retries
-						self.webdriver.refresh()
+				except TimeoutException:
+						continue
+				except Exception as e:
+						logging.error(f"Error during login: {e}")
+						self.webdriver.close()
+						raise
 						
 	def execute_login(self) -> None:
 		# Email field
@@ -228,8 +189,11 @@ class Login:
 		self.check_locked_user()
 		self.check_banned_user()
 
-		self.utils.waitUntilVisible(By.NAME, "kmsiForm")
-		self.utils.waitUntilClickable(By.ID, "acceptButton").click()
+		if self.browser.mobile:
+			self.utils.tryDismissAllMessages()
+		else:
+			self.utils.waitUntilVisible(By.NAME, "kmsiForm")
+			self.utils.waitUntilClickable(By.ID, "acceptButton").click()
 
 		# TODO: This should probably instead be checked with an element's id,
 		# as the hardcoded text might be different in other languages

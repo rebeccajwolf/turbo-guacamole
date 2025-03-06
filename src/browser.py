@@ -47,8 +47,6 @@ class Browser:
 				if not self.proxy and account.get('proxy'):
 						self.proxy = account.proxy
 
-				# Clean up any existing chrome processes
-				self.kill_existing_chrome_processes()
 				self.userDataDir = self.setupProfiles()                
 				self.browserConfig = getBrowserConfig(self.userDataDir)
 				(
@@ -59,9 +57,25 @@ class Browser:
 				if newBrowserConfig:
 						self.browserConfig = newBrowserConfig
 						saveBrowserConfig(self.userDataDir, self.browserConfig)
-				self.webdriver = self.browserSetup()
-				self.utils = Utils(self.webdriver)
+				self.webdriver = None
+				self.utils = None
+				self.setup_browser()
 				logging.debug("out __init__")
+
+
+		def setup_browser(self):
+				"""Setup browser instance with proper error handling"""
+				try:
+						# Clean up any existing chrome processes
+						self.kill_existing_chrome_processes()
+						
+						self.webdriver = self.browserSetup()
+						self._setup_cdp_listeners()
+						self.utils = Utils(self.webdriver)
+				except Exception as e:
+						logging.error(f"Error setting up browser: {str(e)}")
+						self.cleanup()
+						raise
 
 		def reset_weston(self):
 				"""Reset Weston compositor for clean display server state"""
@@ -213,6 +227,102 @@ class Browser:
 				)
 				self.cleanup()
 
+		def _apply_cdp_settings(self, target_id=None):
+				"""Apply CDP settings to a specific target or current tab"""
+				if self.browserConfig.get("sizes"):
+						deviceHeight = self.browserConfig["sizes"]["height"]
+						deviceWidth = self.browserConfig["sizes"]["width"]
+				else:
+						if self.mobile:
+								deviceHeight = random.randint(568, 1024)
+								deviceWidth = random.randint(320, min(576, int(deviceHeight * 0.7)))
+						else:
+								deviceWidth = random.randint(1024, 2560)
+								deviceHeight = random.randint(768, min(1440, int(deviceWidth * 0.8)))
+						self.browserConfig["sizes"] = {
+								"height": deviceHeight,
+								"width": deviceWidth,
+						}
+						saveBrowserConfig(self.userDataDir, self.browserConfig)
+
+				if self.mobile:
+						screenHeight = deviceHeight + 146
+						screenWidth = deviceWidth
+				else:
+						screenWidth = deviceWidth + 55
+						screenHeight = deviceHeight + 151
+
+				logging.info(f"Screen size: {screenWidth}x{screenHeight}")
+				logging.info(f"Device size: {deviceWidth}x{deviceHeight}")
+
+
+				cdp_commands = [
+						(
+								"Emulation.setTouchEmulationEnabled",
+								{"enabled": self.mobile}
+						),
+						(
+								"Emulation.setDeviceMetricsOverride",
+								{
+										"width": deviceWidth,
+										"height": deviceHeight,
+										"deviceScaleFactor": 0,
+										"mobile": self.mobile,
+										"screenWidth": screenWidth,
+										"screenHeight": screenHeight,
+										"positionX": 0,
+										"positionY": 0,
+										"viewport": {
+												"x": 0,
+												"y": 0,
+												"width": deviceWidth,
+												"height": deviceHeight,
+												"scale": 1,
+										},
+								}
+						),
+						(
+								"Emulation.setUserAgentOverride",
+								{
+										"userAgent": self.userAgent,
+										"platform": self.userAgentMetadata["platform"],
+										"userAgentMetadata": self.userAgentMetadata,
+								},
+						)
+					]
+
+
+				 for command, params in cdp_commands:
+						if target_id:
+								self.webdriver.execute_cdp_cmd(
+										f'Target.sendMessageToTarget',
+										{
+												'targetId': target_id,
+												'message': json.dumps({
+														'method': command,
+														'params': params
+												})
+										}
+								)
+						else:
+								self.webdriver.execute_cdp_cmd(command, params)
+
+		def _setup_cdp_listeners(self):
+				"""Setup listeners for new tab creation and navigation"""
+				def handle_target_created(target):
+						target_id = target.get('targetId')
+						if target.get('type') == 'page':
+								self._apply_cdp_settings(target_id)
+
+				# Enable target events
+				self.webdriver.execute_cdp_cmd('Target.setDiscoverTargets', {'discover': True})
+				
+				# Add event listener for target creation
+				self.webdriver.add_cdp_listener('Target.targetCreated', handle_target_created)
+				
+				# Apply settings to initial tab
+				self._apply_cdp_settings()
+
 		def browserSetup(
 				self,
 		) -> undetected_chromedriver.Chrome:
@@ -303,72 +413,6 @@ class Browser:
 
 				seleniumLogger = logging.getLogger("seleniumwire")
 				seleniumLogger.setLevel(logging.ERROR)
-
-				if self.browserConfig.get("sizes"):
-						deviceHeight = self.browserConfig["sizes"]["height"]
-						deviceWidth = self.browserConfig["sizes"]["width"]
-				else:
-						if self.mobile:
-								deviceHeight = random.randint(568, 1024)
-								deviceWidth = random.randint(320, min(576, int(deviceHeight * 0.7)))
-						else:
-								deviceWidth = random.randint(1024, 2560)
-								deviceHeight = random.randint(768, min(1440, int(deviceWidth * 0.8)))
-						self.browserConfig["sizes"] = {
-								"height": deviceHeight,
-								"width": deviceWidth,
-						}
-						saveBrowserConfig(self.userDataDir, self.browserConfig)
-
-				if self.mobile:
-						screenHeight = deviceHeight + 146
-						screenWidth = deviceWidth
-				else:
-						screenWidth = deviceWidth + 55
-						screenHeight = deviceHeight + 151
-
-				logging.info(f"Screen size: {screenWidth}x{screenHeight}")
-				logging.info(f"Device size: {deviceWidth}x{deviceHeight}")
-
-				if self.mobile:
-						driver.execute_cdp_cmd(
-								"Emulation.setTouchEmulationEnabled",
-								{
-										"enabled": True,
-								},
-						)
-
-				# Set device metrics with explicit viewport
-				driver.execute_cdp_cmd(
-						"Emulation.setDeviceMetricsOverride",
-						{
-								"width": deviceWidth,
-								"height": deviceHeight,
-								"deviceScaleFactor": 0,
-								"mobile": self.mobile,
-								"screenWidth": screenWidth,
-								"screenHeight": screenHeight,
-								"positionX": 0,
-								"positionY": 0,
-								"viewport": {
-										"x": 0,
-										"y": 0,
-										"width": deviceWidth,
-										"height": deviceHeight,
-										"scale": 1,
-								},
-						},
-				)
-
-				# Set user agent with explicit platform
-				driver.execute_cdp_cmd(
-						"Emulation.setUserAgentOverride",
-						{
-								"userAgent": self.userAgent,
-								"platform": self.userAgentMetadata["platform"],
-								"userAgentMetadata": self.userAgentMetadata,
-						},
-				)
 
 				return driver
 
