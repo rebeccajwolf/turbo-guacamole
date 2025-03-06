@@ -95,16 +95,19 @@ class Browser:
 						# Ensure runtime directory exists with correct permissions
 						os.makedirs(runtime_dir, mode=0o700, exist_ok=True)
 
-						# Start new Weston instance
-						weston_cmd = [
-								'/usr/bin/weston',
-								'--backend=headless-backend.so',
-								'--width=1920',
-								'--height=1080',
-								'--socket=wayland-1'
-						]
-						
-						subprocess.Popen(weston_cmd)
+						# Start new Weston instance with output redirected to /dev/null
+						with open(os.devnull, 'w') as devnull:
+								weston_process = subprocess.Popen(
+										[
+												'/usr/bin/weston',
+												'--backend=headless-backend.so',
+												'--width=1920',
+												'--height=1080',
+												'--socket=wayland-1'
+										],
+										stdout=devnull,
+										stderr=devnull
+								)
 
 						# Wait for Weston to start
 						timeout = 10

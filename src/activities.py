@@ -9,7 +9,7 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from src.browser import Browser
 from src.constants import REWARDS_URL
-from src.utils import CONFIG, sendNotification, getAnswerCode, active_sleep
+from src.utils import CONFIG, sendNotification, getAnswerCode, active_sleep, take_screenshot
 
 
 class Activities:
@@ -47,16 +47,21 @@ class Activities:
 		# Simulate completing a survey activity
 		# noinspection SpellCheckingInspection
 		# self.webdriver.find_element(By.ID, f"btoption{randint(0, 1)}").click()
+		
 		res = True
 		# click poll option
 		while res:
-			time.sleep(3)
-			self.browser.utils.waitUntilClickable(By.ID, 'btoption0', timeToWait=20)
-			choices = ['btoption0', 'btoption1']
-			self.webdriver.find_element(By.ID, choice(choices)).click()
-			time.sleep(7)
-			if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
-				res = False
+			try:
+				time.sleep(3)
+				self.browser.utils.waitUntilClickable(By.ID, 'btoption0', timeToWait=20)
+				choices = ['btoption0', 'btoption1']
+				self.webdriver.find_element(By.ID, choice(choices)).click()
+				time.sleep(7)
+				if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
+					res = False
+			except Exception as e:
+				take_screenshot(self.webdriver, "Poll_Quiz_Error")
+				logging.warning(f'Error occured while doing Poll Quiz: {e}')
 
 
 	def waitUntilQuizLoads(self):
@@ -268,12 +273,12 @@ class Activities:
 			self.doActivity(activity, dailySetPromotions)
 		logging.info("[DAILY SET] Done")
 
-		logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
-		morePromotions: list[dict] = self.browser.utils.getMorePromotions()
-		self.browser.utils.goToRewards()
-		for activity in morePromotions:
-			self.doActivity(activity, morePromotions)
-		logging.info("[MORE PROMOS] Done")
+		# logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
+		# morePromotions: list[dict] = self.browser.utils.getMorePromotions()
+		# self.browser.utils.goToRewards()
+		# for activity in morePromotions:
+		# 	self.doActivity(activity, morePromotions)
+		# logging.info("[MORE PROMOS] Done")
 
 		# todo Send one email for all accounts?
 		# fixme This is falsely considering some activities incomplete when complete
