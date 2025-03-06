@@ -196,9 +196,9 @@ class Browser:
 		# if self._heartbeat_thread:
 		# 	self._heartbeat_thread.join(timeout=2)
 		# turns out close is needed for undetected_chromedriver
-		self.webdriver.close()
-		self.webdriver.quit()
-		# self.cleanup()
+		# self.webdriver.close()
+		# self.webdriver.quit()
+		self.cleanup()
 
 	def browserSetup(
 		self,
