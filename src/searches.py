@@ -268,55 +268,70 @@ class Searches:
 						logging.warning(f"Error during random scroll: {str(e)}")
 
 		def click_random_result(self):
-				"""Click a random search result link"""
-				try:
-						# Store original window handle
-						original_window = self.webdriver.current_window_handle
-						
-						# Find all search result links
-						results = self.webdriver.find_elements(By.CSS_SELECTOR, "#b_results .b_algo h2 a")
-						if not results:
-								return
-						
-						# Click random result
-						random_result = choice(results)
-						random_result.click()
-						
-						# Wait for new tab or stay on same page
-						sleep(2)
-						
-						# Handle new window if opened
-						new_window = None
-						try:
-								WebDriverWait(self.webdriver, 3).until(lambda d: len(d.window_handles) > 1)
-								new_window = [h for h in self.webdriver.window_handles if h != original_window][0]
-						except TimeoutException:
-								pass
+			"""Click a random search result link with improved error handling"""
+			try:
+					# Store original window handle
+					original_window = self.webdriver.current_window_handle
+					
+					# Handle "Continue on Edge" popup
+					self.close_continue_popup()
+					
+					# Find all search result links
+					results = self.webdriver.find_elements(By.CSS_SELECTOR, "#b_results .b_algo h2 a")
+					if not results:
+							return
+					
+					# Select random result
+					random_result = random.choice(results)
+					
+					try:
+							# Scroll element into view
+							self.webdriver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", random_result)
+							sleep(1)  # Wait for scroll
+							
+							# Try regular click first
+							random_result.click()
+					except ElementClickInterceptedException:
+							try:
+									# Try JavaScript click if regular click fails
+									self.webdriver.execute_script("arguments[0].click();", random_result)
+							except Exception as e:
+									logging.warning(f"JavaScript click failed: {str(e)}")
+									return
+					
+					# Wait for new tab or stay on same page
+					sleep(2)
+					
+					# Handle new window if opened
+					new_window = None
+					try:
+							WebDriverWait(self.webdriver, 3).until(lambda d: len(d.window_handles) > 1)
+							new_window = [h for h in self.webdriver.window_handles if h != original_window][0]
+					except TimeoutException:
+							pass
 
-						if new_window:
-								# Switch to new window
-								self.webdriver.switch_to.window(new_window)
-								
-								# Wait for page load and scroll
-								sleep(uniform(3, 5))
-								self.random_scroll()
-								
-								# Close tab and switch back
-								self.webdriver.close()
-								self.webdriver.switch_to.window(original_window)
-						else:
-								# Just scroll on current page
-								sleep(uniform(2, 3))
-								self.random_scroll()
+					if new_window:
+							# Switch to new window
+							self.webdriver.switch_to.window(new_window)
+							
+							# Wait for page load and scroll
+							sleep(uniform(3, 5))
+							self.random_scroll()
+							
+							# Close tab and switch back
+							self.webdriver.close()
+							self.webdriver.switch_to.window(original_window)
+					else:
+							# Just scroll on current page
+							sleep(uniform(2, 3))
+							self.random_scroll()
+					
+			except Exception as e:
+					logging.warning(f"Error clicking random result: {str(e)}")
+					# Ensure we're back on the original window
+					if original_window in self.webdriver.window_handles:
+							self.webdriver.switch_to.window(original_window)
 
-						# Handle "Continue on Edge" popup
-						self.close_continue_popup()
-						
-				except Exception as e:
-						logging.warning(f"Error clicking random result: {str(e)}")
-						# Ensure we're back on the original window
-						if original_window in self.webdriver.window_handles:
-								self.webdriver.switch_to.window(original_window)
 
 		def close_continue_popup(self):
 				"""Close the 'Continue on Edge' popup if present"""
