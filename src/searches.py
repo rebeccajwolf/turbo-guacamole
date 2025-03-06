@@ -282,7 +282,7 @@ class Searches:
 							return
 					
 					# Select random result
-					random_result = random.choice(results)
+					random_result = choice(results)
 					
 					try:
 							# Scroll element into view
