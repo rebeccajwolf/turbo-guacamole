@@ -195,8 +195,10 @@ class Browser:
 		# self._stop_heartbeat.set()
 		# if self._heartbeat_thread:
 		# 	self._heartbeat_thread.join(timeout=2)
-
-		self.cleanup()
+		# turns out close is needed for undetected_chromedriver
+		self.webdriver.close()
+		self.webdriver.quit()
+		# self.cleanup()
 
 	def browserSetup(
 		self,
@@ -224,12 +226,33 @@ class Browser:
 		options.add_argument("--disable-search-engine-choice-screen")  # 153
 		options.add_argument("--disable-component-update")
 		options.add_argument("--ozone-platform=wayland")
-		options.add_argument("--enable-wayland-ime")
+		# options.add_argument("--enable-wayland-ime")
 		options.add_argument("--enable-features=UseOzonePlatform")
+		
+		# Enhanced privacy and security options
+		options.add_argument("--disable-web-security")
+		options.add_argument("--disable-blink-features=AutomationControlled")
+		options.add_argument("--disable-features=IsolateOrigins,site-per-process,AutomationControlled")
+		options.add_argument("--disable-blink-features")
+
+		# Performance and stability options
+		options.add_argument("--disable-dev-tools")
 		options.add_argument("--disable-background-networking")
-		options.add_argument('--disable-background-timer-throttling')
-		options.add_argument('--disable-backgrounding-occluded-windows')
-		options.add_argument('--disable-renderer-backgrounding')
+		options.add_argument("--disable-background-timer-throttling")
+		options.add_argument("--disable-backgrounding-occluded-windows")
+		options.add_argument("--disable-breakpad")
+		options.add_argument("--disable-component-extensions-with-background-pages")
+		options.add_argument("--disable-features=TranslateUI")
+		options.add_argument("--disable-ipc-flooding-protection")
+		options.add_argument("--disable-renderer-backgrounding")
+		options.add_argument("--force-color-profile=srgb")
+		options.add_argument("--metrics-recording-only")
+		options.add_argument("--no-first-run")
+
+		# Microsoft-specific options
+		options.add_argument("--disable-prompt-on-repost")
+		options.add_argument("--disable-domain-reliability")
+		options.add_argument("--disable-client-side-phishing-detection")
 		options.page_load_strategy = "eager"
 
 		seleniumwireOptions: dict[str, Any] = {
@@ -261,7 +284,7 @@ class Browser:
 			driver = webdriver.Chrome(
 				options=options,
 				seleniumwire_options=seleniumwireOptions,
-				# user_data_dir=self.userDataDir.as_posix(),
+				user_data_dir=self.userDataDir.as_posix(),
 				driver_executable_path="chromedriver",
 				# version_main=major,
 			)
