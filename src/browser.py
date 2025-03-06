@@ -132,8 +132,7 @@ class Browser:
 							proc_name = proc.info['name'].lower()
 							if any(name in proc_name for name in ['chrome', 'chromium', 'chromedriver']):
 									try:
-											proc.kill()
-											proc.wait(timeout=5)  # Wait for process to terminate
+											psutil.Process(proc.info["pid"]).terminate()
 									except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
 											pass
 					time.sleep(2)  # Give processes time to cleanup
