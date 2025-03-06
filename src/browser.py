@@ -47,9 +47,6 @@ class Browser:
 				if not self.proxy and account.get('proxy'):
 						self.proxy = account.proxy
 
-				# Reset Weston before starting new browser session
-				self.reset_weston()
-						
 				# Clean up any existing chrome processes
 				self.kill_existing_chrome_processes()
 				self.userDataDir = self.setupProfiles()                
@@ -88,12 +85,6 @@ class Browser:
 						# Clean up runtime directory
 						runtime_dir = os.environ.get('XDG_RUNTIME_DIR', '/tmp/runtime-user')
 						wayland_socket = os.path.join(runtime_dir, os.environ.get('WAYLAND_DISPLAY', 'wayland-1'))
-						
-						if os.path.exists(wayland_socket):
-								os.remove(wayland_socket)
-
-						# Ensure runtime directory exists with correct permissions
-						os.makedirs(runtime_dir, mode=0o700, exist_ok=True)
 
 						# Start new Weston instance with output redirected to /dev/null
 						with open(os.devnull, 'w') as devnull:
@@ -102,8 +93,7 @@ class Browser:
 												'/usr/bin/weston',
 												'--backend=headless-backend.so',
 												'--width=1920',
-												'--height=1080',
-												'--socket=wayland-1'
+												'--height=1080'
 										],
 										stdout=devnull,
 										stderr=devnull
@@ -200,7 +190,9 @@ class Browser:
 										if hasattr(self, 'userDataDir') and self.userDataDir.exists():
 												shutil.rmtree(self.userDataDir, ignore_errors=True)
 										
-										time.sleep(1)
+										# Reset Weston before starting new browser session
+										self.reset_weston()
+										time.sleep(2)
 								except Exception as e:
 										logging.error(f"Error during browser quit: {str(e)}")
 								self.webdriver = None
