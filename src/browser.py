@@ -7,6 +7,7 @@ import time
 import threading
 import shutil
 import psutil
+import subprocess
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Type
@@ -45,6 +46,10 @@ class Browser:
 				self.proxy = CONFIG.browser.proxy
 				if not self.proxy and account.get('proxy'):
 						self.proxy = account.proxy
+						
+				# Initialize Wayland environment
+				self.setup_wayland_environment()
+				
 				# Clean up any existing chrome processes
 				self.kill_existing_chrome_processes()
 				self.userDataDir = self.setupProfiles()                
@@ -61,17 +66,70 @@ class Browser:
 				self.utils = Utils(self.webdriver)
 				logging.debug("out __init__")
 
+		def setup_wayland_environment(self):
+				"""Setup Wayland environment variables and ensure socket cleanup"""
+				runtime_dir = os.environ.get('XDG_RUNTIME_DIR', '/tmp/runtime-user')
+				wayland_display = os.environ.get('WAYLAND_DISPLAY', 'wayland-1')
+				
+				# Ensure runtime directory exists with correct permissions
+				os.makedirs(runtime_dir, mode=0o700, exist_ok=True)
+				
+				# Clean up existing Wayland socket if present
+				wayland_socket = os.path.join(runtime_dir, wayland_display)
+				if os.path.exists(wayland_socket):
+						try:
+								os.remove(wayland_socket)
+						except Exception as e:
+								logging.warning(f"Failed to remove existing Wayland socket: {e}")
+				
+				# Set required environment variables
+				os.environ.update({
+						'XDG_RUNTIME_DIR': runtime_dir,
+						'WAYLAND_DISPLAY': wayland_display,
+						'MOZ_ENABLE_WAYLAND': '1',
+						'CHROME_ENABLE_WAYLAND': '1',
+						'WLR_BACKENDS': 'headless',
+						'WLR_LIBINPUT_NO_DEVICES': '1',
+						'WLR_DRM_NO_ATOMIC': '1',
+						'XCURSOR_THEME': 'default',
+						'XCURSOR_SIZE': '24',
+						'BROWSER_FULLSCREEN': '1'
+				})
+				
+				# Wait for Wayland socket to be available
+				timeout = 10
+				start_time = time.time()
+				while time.time() - start_time < timeout:
+						if os.path.exists(wayland_socket):
+								break
+						time.sleep(0.5)
+				
+				if not os.path.exists(wayland_socket):
+						logging.warning("Wayland socket not found after timeout")
+
 		def kill_existing_chrome_processes(self):
 				"""Kill any existing chrome processes to ensure clean startup"""
 				try:
+						# First try graceful shutdown
 						for proc in psutil.process_iter(['pid', 'name']):
-								# More specific process name matching
 								proc_name = proc.info['name'].lower()
 								if any(name in proc_name for name in ['chrome', 'chromium', 'chromedriver']):
 										try:
-												psutil.Process(proc.info["pid"]).terminate()
-										except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
-												pass
+												process = psutil.Process(proc.info["pid"])
+												process.terminate()
+												process.wait(timeout=3)
+										except (psutil.NoSuchProcess, psutil.TimeoutExpired):
+												try:
+														process.kill()
+												except psutil.NoSuchProcess:
+														pass
+										except Exception as e:
+												logging.warning(f"Error terminating process: {e}")
+						
+						# Force kill any remaining processes
+						subprocess.run(['pkill', '-9', '-f', 'chrome'], stderr=subprocess.DEVNULL)
+						subprocess.run(['pkill', '-9', '-f', 'chromium'], stderr=subprocess.DEVNULL)
+						
 						time.sleep(2)  # Give processes time to cleanup
 				except Exception as e:
 						logging.warning(f"Error cleaning up chrome processes: {e}")
@@ -108,7 +166,16 @@ class Browser:
 										if hasattr(self, 'userDataDir') and self.userDataDir.exists():
 												shutil.rmtree(self.userDataDir, ignore_errors=True)
 										
-										# Small delay to ensure processes are terminated
+										# Clean up Wayland socket
+										runtime_dir = os.environ.get('XDG_RUNTIME_DIR', '/tmp/runtime-user')
+										wayland_display = os.environ.get('WAYLAND_DISPLAY', 'wayland-1')
+										wayland_socket = os.path.join(runtime_dir, wayland_display)
+										if os.path.exists(wayland_socket):
+												try:
+														os.remove(wayland_socket)
+												except Exception as e:
+														logging.warning(f"Failed to remove Wayland socket: {e}")
+										
 										time.sleep(2)
 								except Exception as e:
 										logging.error(f"Error during browser quit: {str(e)}")
@@ -128,8 +195,7 @@ class Browser:
 				logging.debug(
 						f"in __exit__ exc_type={exc_type} exc_value={exc_value} traceback={traceback}"
 				)
-				self.webdriver.close()
-				self.webdriver.quit()
+				self.cleanup()
 
 		def browserSetup(
 				self,
@@ -156,8 +222,11 @@ class Browser:
 				options.add_argument("--disable-http2")
 				options.add_argument("--disable-search-engine-choice-screen")
 				options.add_argument("--disable-component-update")
+				
+				# Wayland specific options
 				options.add_argument("--ozone-platform=wayland")
 				options.add_argument("--enable-features=UseOzonePlatform")
+				options.add_argument("--enable-wayland-ime")
 				
 				# Enhanced privacy and security options
 				options.add_argument("--disable-web-security")
@@ -298,6 +367,20 @@ class Browser:
 						if check_viewport():
 								break
 						time.sleep(0.5)
+
+				# Verify Wayland connection
+				try:
+						driver.execute_script("""
+								return new Promise((resolve, reject) => {
+										if (navigator.userAgent.includes('Wayland')) {
+												resolve(true);
+										} else {
+												reject('Not running on Wayland');
+										}
+								});
+						""")
+				except Exception as e:
+						logging.warning(f"Wayland verification failed: {e}")
 
 				return driver
 
