@@ -233,7 +233,7 @@ class Searches:
 						self.random_scroll()
 
 						# Random chance to click a result
-						if random() < 0.3:  # 30% chance
+						if random() < 0.5:  # 50% chance
 								self.click_random_result()
 
 						pointsAfter = self.browser.utils.getAccountPoints()
@@ -270,6 +270,8 @@ class Searches:
 		def click_random_result(self):
 			"""Click a random search result link with improved error handling"""
 			try:
+
+					logging.info(f'[BING] Doing Random link clicking...')
 					# Store original window handle
 					original_window = self.webdriver.current_window_handle
 					
