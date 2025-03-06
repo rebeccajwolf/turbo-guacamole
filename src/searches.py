@@ -5,12 +5,15 @@ import shelve
 from datetime import date, timedelta
 from enum import Enum, auto
 from itertools import cycle
-from random import random, randint, shuffle, uniform
+from random import random, randint, shuffle, uniform, choice
 from time import sleep
 from typing import Final
 
 import requests
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException
 
 from src.browser import Browser
 from src.utils import CONFIG, makeRequestsSession, getProjectRoot, active_sleep
@@ -226,14 +229,17 @@ class Searches:
 						searchbar.submit()
 
 
+						# Random scroll after search
+						sleep(uniform(2, 3))
+						self.random_scroll()
+
+						# Random chance to click a result
+						if random() < 0.3:  # 30% chance
+								self.click_random_result()
+
 						pointsAfter = self.browser.utils.getAccountPoints()
 						if pointsBefore < pointsAfter:
 								sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
-								for _ in range(3):  # Scroll down 3 times
-									self.webdriver.execute_script(
-											"window.scrollTo(0, document.body.scrollHeight);"
-									)
-									sleep(randint(7, 15)) # Random wait between scrolls
 								return
 
 						# todo
@@ -241,3 +247,84 @@ class Searches:
 						#     logging.info("[BING] " + "TIMED OUT GETTING NEW PROXY")
 						#     self.webdriver.proxy = self.browser.giveMeProxy()
 				logging.error("[BING] Reached max search attempt retries")
+
+
+		def random_scroll(self):
+				"""Scroll to a random position on the page"""
+				try:
+						# Get viewport and total height
+						viewport_height = self.webdriver.execute_script("return window.innerHeight")
+						total_height = self.webdriver.execute_script("return document.body.scrollHeight")
+						
+						# Calculate random scroll position
+						random_scroll = randint(0, max(0, total_height - viewport_height))
+						
+						# Smooth scroll to position
+						self.webdriver.execute_script(f"window.scrollTo({{top: {random_scroll}, behavior: 'smooth'}})")
+						
+						# Small delay to allow scroll animation
+						sleep(uniform(1, 2))
+						
+				except Exception as e:
+						logging.warning(f"Error during random scroll: {str(e)}")
+
+		def click_random_result(self):
+				"""Click a random search result link"""
+				try:
+						# Store original window handle
+						original_window = self.webdriver.current_window_handle
+						
+						# Find all search result links
+						results = self.webdriver.find_elements(By.CSS_SELECTOR, "#b_results .b_algo h2 a")
+						if not results:
+								return
+						
+						# Click random result
+						random_result = choice(results)
+						random_result.click()
+						
+						# Wait for new tab or stay on same page
+						sleep(2)
+						
+						# Handle new window if opened
+						new_window = None
+						try:
+								WebDriverWait(self.webdriver, 3).until(lambda d: len(d.window_handles) > 1)
+								new_window = [h for h in self.webdriver.window_handles if h != original_window][0]
+						except TimeoutException:
+								pass
+
+						if new_window:
+								# Switch to new window
+								self.webdriver.switch_to.window(new_window)
+								
+								# Wait for page load and scroll
+								sleep(uniform(3, 5))
+								self.random_scroll()
+								
+								# Close tab and switch back
+								self.webdriver.close()
+								self.webdriver.switch_to.window(original_window)
+						else:
+								# Just scroll on current page
+								sleep(uniform(2, 3))
+								self.random_scroll()
+
+						# Handle "Continue on Edge" popup
+						self.close_continue_popup()
+						
+				except Exception as e:
+						logging.warning(f"Error clicking random result: {str(e)}")
+						# Ensure we're back on the original window
+						if original_window in self.webdriver.window_handles:
+								self.webdriver.switch_to.window(original_window)
+
+		def close_continue_popup(self):
+				"""Close the 'Continue on Edge' popup if present"""
+				try:
+						popup = WebDriverWait(self.webdriver, 2).until(
+								EC.presence_of_element_located((By.ID, "sacs_close"))
+						)
+						popup.click()
+				except TimeoutException:
+						pass

@@ -89,56 +89,60 @@ class Activities:
 
 	def completeQuiz(self):
 		# Simulate completing a quiz activity
-		sleep(12)
-		if not self.waitUntilQuizLoads():
-			self.browser.utils.resetTabs()
-			return
-		with contextlib.suppress(TimeoutException):
-			startQuiz = self.browser.utils.waitUntilQuizLoads()
-			self.browser.utils.click(startQuiz)
-		self.browser.utils.waitUntilVisible(
-			By.XPATH, '//*[@id="currentQuestionContainer"]/div/div[1]', 180
-		)
-		currentQuestionNumber: int = self.webdriver.execute_script(
-			"return _w.rewardsQuizRenderInfo.currentQuestionNumber"
-		)
-		maxQuestions = self.webdriver.execute_script(
-			"return _w.rewardsQuizRenderInfo.maxQuestions"
-		)
-		numberOfOptions = self.webdriver.execute_script(
-			"return _w.rewardsQuizRenderInfo.numberOfOptions"
-		)
-		for _ in range(currentQuestionNumber, maxQuestions + 1):
-			if numberOfOptions == 8:
-				answers = []
-				for i in range(numberOfOptions):
-					isCorrectOption = self.webdriver.find_element(
-						By.ID, f"rqAnswerOption{i}"
-					).get_attribute("iscorrectoption")
-					if isCorrectOption and isCorrectOption.lower() == "true":
-						answers.append(f"rqAnswerOption{i}")
-				for answer in answers:
-					element = self.webdriver.find_element(By.ID, answer)
-					self.browser.utils.click(element)
-					self.browser.utils.waitUntilQuestionRefresh()
-			elif numberOfOptions in [2, 3, 4]:
-				correctOption = self.webdriver.execute_script(
-					"return _w.rewardsQuizRenderInfo.correctAnswer"
-				)
-				for i in range(numberOfOptions):
-					if (
-						self.webdriver.find_element(
+		try:
+			sleep(12)
+			if not self.waitUntilQuizLoads():
+				self.browser.utils.resetTabs()
+				return
+			with contextlib.suppress(TimeoutException):
+				startQuiz = self.browser.utils.waitUntilQuizLoads()
+				self.browser.utils.click(startQuiz)
+			self.browser.utils.waitUntilVisible(
+				By.XPATH, '//*[@id="currentQuestionContainer"]/div/div[1]', 180
+			)
+			currentQuestionNumber: int = self.webdriver.execute_script(
+				"return _w.rewardsQuizRenderInfo.currentQuestionNumber"
+			)
+			maxQuestions = self.webdriver.execute_script(
+				"return _w.rewardsQuizRenderInfo.maxQuestions"
+			)
+			numberOfOptions = self.webdriver.execute_script(
+				"return _w.rewardsQuizRenderInfo.numberOfOptions"
+			)
+			for _ in range(currentQuestionNumber, maxQuestions + 1):
+				if numberOfOptions == 8:
+					answers = []
+					for i in range(numberOfOptions):
+						isCorrectOption = self.webdriver.find_element(
 							By.ID, f"rqAnswerOption{i}"
-						).get_attribute("data-option")
-						== correctOption
-					):
-						element = self.webdriver.find_element(
-							By.ID, f"rqAnswerOption{i}"
-						)
+						).get_attribute("iscorrectoption")
+						if isCorrectOption and isCorrectOption.lower() == "true":
+							answers.append(f"rqAnswerOption{i}")
+					for answer in answers:
+						element = self.webdriver.find_element(By.ID, answer)
 						self.browser.utils.click(element)
-
 						self.browser.utils.waitUntilQuestionRefresh()
-						break
+				elif numberOfOptions in [2, 3, 4]:
+					correctOption = self.webdriver.execute_script(
+						"return _w.rewardsQuizRenderInfo.correctAnswer"
+					)
+					for i in range(numberOfOptions):
+						if (
+							self.webdriver.find_element(
+								By.ID, f"rqAnswerOption{i}"
+							).get_attribute("data-option")
+							== correctOption
+						):
+							element = self.webdriver.find_element(
+								By.ID, f"rqAnswerOption{i}"
+							)
+							self.browser.utils.click(element)
+
+							self.browser.utils.waitUntilQuestionRefresh()
+							break
+		except Exception as e:
+			take_screenshot(self.webdriver, "Quiz_Error")
+			logging.warning(f'Error occured while doing Quiz: {e}')
 
 	def completeABC(self):
 		# Simulate completing an ABC activity
