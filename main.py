@@ -221,7 +221,7 @@ def executeBot(currentAccount):
 				logging.info(
 					f"[POINTS] You have {formatNumber(startingPoints)} points on your account"
 				)
-				# Activities(desktopBrowser).completeActivities()
+				Activities(desktopBrowser).completeActivities()
 				# PunchCards(desktopBrowser).completePunchCards()
 				# VersusGame(desktopBrowser).completeVersusGame()
 
