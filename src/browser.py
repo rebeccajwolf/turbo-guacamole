@@ -140,43 +140,73 @@ class Browser:
 					logging.warning(f"Error cleaning up chrome processes: {e}")
 
 	def cleanup(self):
-			"""Clean up browser resources with proper process termination"""
-			if self.webdriver:
-					try:
-							# Store current window handle
-							current_handle = self.webdriver.current_window_handle
+		"""Clean up browser resources with proper process termination"""
+		if self.webdriver:
+				try:
+						# Store current window handle
+						current_handle = self.webdriver.current_window_handle
+						
+						# Close any extra tabs/windows except main
+						all_handles = self.webdriver.window_handles
+						for handle in all_handles:
+								if handle != current_handle:
+										self.webdriver.switch_to.window(handle)
+										self.webdriver.close()
+						
+						# Switch back to main window and close it
+						self.webdriver.switch_to.window(current_handle)
+						self.webdriver.close()
+						
+				except Exception as e:
+						logging.error(f"Error during browser cleanup: {str(e)}")
+				finally:
+						try:
+								# Ensure webdriver is fully quit
+								self.webdriver.quit()
+								
+								# Kill any remaining chrome processes
+								self.kill_existing_chrome_processes()
+								
+								# Clean up the user data directory
+								if hasattr(self, 'userDataDir') and self.userDataDir.exists():
+										shutil.rmtree(self.userDataDir, ignore_errors=True)
+								
+								# Reset Weston display state
+								self.reset_weston_display()
+								
+								# Small delay to ensure processes are terminated
+								time.sleep(2)
+						except Exception as e:
+								logging.error(f"Error during browser quit: {str(e)}")
+						self.webdriver = None
+						self.utils = None
+
+	def reset_weston_display(self):
+			"""Reset the Weston display state"""
+			try:
+					# Get Weston socket path
+					xdg_runtime = os.environ.get('XDG_RUNTIME_DIR', '/tmp/runtime-user')
+					wayland_display = os.environ.get('WAYLAND_DISPLAY', 'wayland-1')
+					socket_path = f"{xdg_runtime}/{wayland_display}"
+					
+					if os.path.exists(socket_path):
+							# Restart Weston compositor
+							os.system("pkill -f weston")
+							time.sleep(1)
+							os.system("/usr/bin/weston --backend=headless-backend.so --width=1920 --height=1080 &")
+							time.sleep(2)
 							
-							# Close any extra tabs/windows except main
-							all_handles = self.webdriver.window_handles
-							for handle in all_handles:
-									if handle != current_handle:
-											self.webdriver.switch_to.window(handle)
-											self.webdriver.close()
-							
-							# Switch back to main window and close it
-							self.webdriver.switch_to.window(current_handle)
-							self.webdriver.close()
-							
-					except Exception as e:
-							logging.error(f"Error during browser cleanup: {str(e)}")
-					finally:
-							try:
-									# Ensure webdriver is fully quit
-									self.webdriver.quit()
+							# Wait for socket to be available
+							timeout = 10
+							while timeout > 0 and not os.path.exists(socket_path):
+									time.sleep(1)
+									timeout -= 1
 									
-									# Kill any remaining chrome processes
-									self.kill_existing_chrome_processes()
+							if not os.path.exists(socket_path):
+									logging.error("Failed to restart Weston display")
 									
-									# Clean up the user data directory
-									if hasattr(self, 'userDataDir') and self.userDataDir.exists():
-											shutil.rmtree(self.userDataDir, ignore_errors=True)
-									
-									# Small delay to ensure processes are terminated
-									time.sleep(2)
-							except Exception as e:
-									logging.error(f"Error during browser quit: {str(e)}")
-							self.webdriver = None
-							self.utils = None
+			except Exception as e:
+					logging.error(f"Error resetting Weston display: {str(e)}")
 
 	def __enter__(self):
 		logging.debug("in __enter__")
