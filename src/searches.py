@@ -314,6 +314,9 @@ class Searches:
 							# Switch to new window
 							self.webdriver.switch_to.window(new_window)
 							
+							logging.info(f"[BING] Random Link Tab: {self.webdriver.title}")
+
+
 							# Wait for page load and scroll
 							sleep(uniform(3, 5))
 							self.random_scroll()
