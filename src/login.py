@@ -123,7 +123,7 @@ class Login:
 								raise
 						logging.warning(f"[LOGIN] Timeout during login: {e1}, retrying...")
 						logging.info(f"[LOGIN] Current URL {self.webdriver.title}")
-						take_screenshot(self.webdriver, f"login_page_{attempt}")
+						take_screenshot(self.webdriver, f"login_page")
 						time.sleep(5)  # Add delay between retries
 						self.webdriver.refresh()
 						
