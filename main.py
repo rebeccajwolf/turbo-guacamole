@@ -225,11 +225,11 @@ def executeBot(currentAccount):
 				# PunchCards(desktopBrowser).completePunchCards()
 				# VersusGame(desktopBrowser).completeVersusGame()
 
-				with Searches(desktopBrowser) as searches:
-					searches.bingSearches()
+				# with Searches(desktopBrowser) as searches:
+				# 	searches.bingSearches()
 
-				goalPoints = utils.getGoalPoints()
-				goalTitle = utils.getGoalTitle()
+				# goalPoints = utils.getGoalPoints()
+				# goalTitle = utils.getGoalTitle()
 
 				remainingSearches = desktopBrowser.getRemainingSearches(
 					desktopAndMobile=True

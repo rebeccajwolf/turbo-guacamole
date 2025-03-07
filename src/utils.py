@@ -661,37 +661,75 @@ class Utils:
 	def getGoalTitle(self) -> str:
 		return self.getDashboardData()["userStatus"]["redeemGoal"]["title"]
 
-	def tryDismissAllMessages(self) -> None:
-		byValues = [
-			(By.ID, "iLandingViewAction"),
-			(By.ID, "iShowSkip"),
-			(By.ID, "iNext"),
-			(By.ID, "iLooksGood"),
-			(By.ID, "idSIButton9"),
-			(By.ID, "bnp_btn_accept"),
-			(By.ID, "bnp_hfly_cta2"),
-			(By.ID, "acceptButton"),
-			(By.ID, "reward_pivot_earn"),
-			(By.CSS_SELECTOR, ".dashboardPopUpPopUpSelectButton"),
-			(By.CSS_SELECTOR, ".ext-secondary.ext-button"),
-			(By.CSS_SELECTOR, ".maybe-later"),
-			(By.CSS_SELECTOR, ".c-glyph.glyph-cancel"),
-			(By.CSS_SELECTOR, ".ms-Button.ms-Button--primary"),
-			(By.XPATH, '//div[@id="cookieConsentContainer"]//button[contains(text(), "Accept")]'),
+	def tryDismissAllMessages(self) -> bool:
+			"""
+			Attempts to dismiss all possible messages/popups by checking visibility and interactability.
+			Returns True if any message was dismissed successfully.
+			"""
+			buttons = [
+					{"by": By.ID, "selector": "acceptButton", "label": "AcceptButton"},
+					{"by": By.CSS_SELECTOR, "selector": ".ext-secondary.ext-button", "label": "Skip for now Button"},
+					{"by": By.ID, "selector": "iLandingViewAction", "label": "iLandingViewAction"},
+					{"by": By.ID, "selector": "iShowSkip", "label": "iShowSkip"},
+					{"by": By.ID, "selector": "iNext", "label": "iNext"},
+					{"by": By.ID, "selector": "iLooksGood", "label": "iLooksGood"},
+					{"by": By.ID, "selector": "idSIButton9", "label": "idSIButton9"},
+					{"by": By.CSS_SELECTOR, "selector": ".ms-Button.ms-Button--primary", "label": "Primary Button"},
+					{"by": By.CSS_SELECTOR, "selector": ".c-glyph.glyph-cancel", "label": "Mobile Welcome Button"},
+					{"by": By.CSS_SELECTOR, "selector": ".maybe-later", "label": "Mobile Rewards App Banner"},
+					{"by": By.XPATH, "selector": "//div[@id='cookieConsentContainer']//button[contains(text(), 'Accept')]", "label": "Accept Cookie Consent Container"},
+					{"by": By.ID, "selector": "bnp_btn_accept", "label": "Bing Cookie Banner"},
+					{"by": By.ID, "selector": "reward_pivot_earn", "label": "Reward Coupon Accept"},
+					{"by": By.CSS_SELECTOR, "selector": ".dashboardPopUpPopUpSelectButton", "label": "Dashboard Popup Button"},
+					{"by": By.ID, "selector": "cookie-banner", "label": "Cookie Banner"}
+			]
 
-		]
-		for byValue in byValues:
-			dismissButtons = []
-			with contextlib.suppress(NoSuchElementException):
-				dismissButtons = self.webdriver.find_elements(
-					by=byValue[0], value=byValue[1]
-				)
-			for dismissButton in dismissButtons:
-				dismissButton.click()
-		with contextlib.suppress(NoSuchElementException):
-			self.webdriver.find_element(By.ID, "cookie-banner").find_element(
-				By.TAG_NAME, "button"
-			).click()
+			any_dismissed = False
+
+			for button in buttons:
+					try:
+							# Find all matching elements
+							elements = self.webdriver.find_elements(by=button["by"], value=button["selector"])
+							
+							for element in elements:
+									try:
+											# Check if element is displayed and interactable
+											if element.is_displayed():
+													# Create a new wait for this specific element
+													wait = WebDriverWait(self.webdriver, 1)
+													
+													# Wait until element is clickable
+													clickable_element = wait.until(
+															EC.element_to_be_clickable(element)
+													)
+													
+													# Try to click the element
+													clickable_element.click()
+													logging.info(f"[DISMISS] Successfully clicked: {button['label']}")
+													any_dismissed = True
+													
+													# Small delay after successful click
+													time.sleep(0.5)
+													
+									except (ElementClickInterceptedException, ElementNotInteractableException) as e:
+											# Try JavaScript click if regular click fails
+											try:
+													self.webdriver.execute_script("arguments[0].click();", element)
+													logging.info(f"[DISMISS] Successfully clicked (JS): {button['label']}")
+													any_dismissed = True
+													time.sleep(0.5)
+											except Exception:
+													continue
+									except (TimeoutException, StaleElementReferenceException):
+											# Element either not clickable or no longer in DOM
+											continue
+									
+					except Exception as e:
+							# Log any unexpected errors but continue with next button
+							logging.info(f"[DISMISS] Error handling {button['label']}: {str(e)}")
+							continue
+
+			return any_dismissed
 
 	def switchToNewTab(self, timeToWait: float = 15, closeTab: bool = False) -> None:
 		time.sleep(timeToWait)
