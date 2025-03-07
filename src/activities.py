@@ -205,6 +205,9 @@ class Activities:
 			if activity["complete"] is True or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
 				logging.debug("Already done, returning")
 				return
+			if "is_unlocked" in activity["attributes"] and activity["attributes"]["is_unlocked"] == "False":
+				logging.debug("Activity locked, returning")
+				return
 			if activityTitle in CONFIG.activities.ignore:
 				logging.debug(f"Ignoring {activityTitle}")
 				return
@@ -242,8 +245,11 @@ class Activities:
 				searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q", timeToWait=20)
 				self.browser.utils.click(searchbar)
 			if activityTitle in CONFIG.activities.search:
-				searchbar.send_keys(CONFIG.activities.search[activityTitle])
-				sleep(2)
+				sleep(1)
+				for char in CONFIG.activities.search[activityTitle]:
+					searchbar.send_keys(char)
+					sleep(uniform(0.2, 0.45))
+				sleep(5)
 				searchbar.submit()
 			elif "poll" in activityTitle:
 				logging.info(f"[ACTIVITY] Completing poll of card {cardId}")
@@ -288,24 +294,21 @@ class Activities:
 		# todo Send one email for all accounts?
 		# fixme This is falsely considering some activities incomplete when complete
 		if CONFIG.get('apprise.notify.incomplete-activity'):
-			incompleteActivities: dict[str, tuple[str, str, str]] = {}
+			incompleteActivities: list[str] = []
 			for activity in (
 				self.browser.utils.getDailySetPromotions()
 				+ self.browser.utils.getMorePromotions()
 			):  # Have to refresh
 				if activity["pointProgress"] < activity["pointProgressMax"]:
-					incompleteActivities[cleanupActivityTitle(activity["title"])] = (
-						activity["promotionType"],
-						activity["pointProgress"],
-						activity["pointProgressMax"],
-					)
+					incompleteActivities.append(cleanupActivityTitle(activity["title"]))
 			for incompleteActivityToIgnore in CONFIG.activities.ignore:
-				incompleteActivities.pop(incompleteActivityToIgnore, None)
+				if incompleteActivityToIgnore in incompleteActivities:
+					incompleteActivities.remove(incompleteActivityToIgnore)
 			if incompleteActivities:
 				logging.info(f"incompleteActivities: {incompleteActivities}")
 				sendNotification(
 					f"We found some incomplete activities for {self.browser.email}",
-					str(incompleteActivities) + "\n" + REWARDS_URL,
+					'"' + '", "'.join(incompleteActivities) + '"\n' + REWARDS_URL,
 				)
 
 
