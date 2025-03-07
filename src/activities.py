@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from random import randint, choice
+from random import randint, choice, uniform
 from time import sleep
 
 from selenium.common import TimeoutException
