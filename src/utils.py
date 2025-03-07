@@ -26,10 +26,11 @@ from requests import Session
 from functools import wraps
 from requests.adapters import HTTPAdapter
 from selenium.common import (
-	ElementClickInterceptedException,
-	ElementNotInteractableException,
-	NoSuchElementException,
-	TimeoutException,
+    ElementClickInterceptedException,
+    ElementNotInteractableException,
+    NoSuchElementException,
+    TimeoutException,
+    StaleElementReferenceException
 )
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
@@ -700,7 +701,7 @@ class Utils:
 													
 													# Wait until element is clickable
 													clickable_element = wait.until(
-															EC.element_to_be_clickable(element)
+															expected_conditions.element_to_be_clickable(element)
 													)
 													
 													# Try to click the element
