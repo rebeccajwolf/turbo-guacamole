@@ -225,22 +225,22 @@ class Activities:
 				self.webdriver.find_element(By.ID, "dc_searchbtn").click()
 				take_screenshot(self.webdriver, "submit_dict_avtivity")
 
-		with contextlib.suppress(TimeoutException):
-				self.browser.utils.waitUntilVisible(By.ID, "modern-flyout", timeToWait=30)
-				searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q", timeToWait=30)
-				self.browser.utils.click(searchbar)
-				sleep(1)
-				for char in query:
-					searchbar.send_keys(char)
-					sleep(uniform(0.2, 0.45))
-				sleep(3)
-				searchbar.submit()
-				sleep(2)
+		
+		self.browser.utils.waitUntilVisible(By.ID, "modern-flyout", timeToWait=30)
+		searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q", timeToWait=30)
+		self.browser.utils.click(searchbar)
+		sleep(1)
+		for char in query:
+			searchbar.send_keys(char)
+			sleep(uniform(0.2, 0.45))
+		sleep(3)
+		searchbar.submit()
+		sleep(2)
 
-				if "define" in query:
-					completeDictionarySearch()
-				elif "tracking" in query:
-					completeTrackingSeach()
+		if "define" in query:
+			completeDictionarySearch()
+		elif "tracking" in query:
+			completeTrackingSeach()
 
 
 	def doActivity(self, activity: dict, activities: list[dict]) -> None:
