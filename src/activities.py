@@ -226,7 +226,7 @@ class Activities:
 				take_screenshot(self.webdriver, "submit_dict_avtivity")
 
 		try:
-			self.browser.utils.waitUntilVisible(By.ID, "modern-flyout", timeToWait=30)
+			# self.browser.utils.waitUntilVisible(By.ID, "modern-flyout", timeToWait=30)
 			searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q", timeToWait=30)
 			self.browser.utils.click(searchbar)
 			sleep(1)
@@ -241,8 +241,9 @@ class Activities:
 				completeDictionarySearch()
 			elif "tracking" in query:
 				completeTrackingSeach()
-		except:
+		except Exception as e:
 			take_screenshot(self.webdriver, "searchOnBing_error")
+			logging.warning(f"Error Occured while Doing Activity: {e}")
 
 
 	def doActivity(self, activity: dict, activities: list[dict]) -> None:
