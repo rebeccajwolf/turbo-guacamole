@@ -16,7 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException
 
 from src.browser import Browser
-from src.utils import CONFIG, makeRequestsSession, getProjectRoot, active_sleep
+from src.utils import CONFIG, makeRequestsSession, getProjectRoot, active_sleep, take_screenshot
 
 
 class RetriesStrategy(Enum):
@@ -274,7 +274,7 @@ class Searches:
 					logging.info(f'[BING] Doing Random link clicking...')
 					# Store original window handle
 					original_window = self.webdriver.current_window_handle
-					
+					take_screenshot(self.webdriver, "Random_click_doing")
 					# Handle "Continue on Edge" popup
 					self.close_continue_popup()
 					
@@ -290,6 +290,7 @@ class Searches:
 							# Scroll element into view
 							self.webdriver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", random_result)
 							sleep(1)  # Wait for scroll
+							take_screenshot(self.webdriver, "IN_Clicking")
 							logging.info(f'[BING] In Clicking...')
 							# Try regular click first
 							random_result.click()
@@ -300,7 +301,7 @@ class Searches:
 							except Exception as e:
 									logging.warning(f"JavaScript click failed: {str(e)}")
 									return
-					
+					take_screenshot(self.webdriver, "Clicked")
 					logging.info(f'[BING] Clicked Link...')
 					# Wait for new tab or stay on same page
 					sleep(2)
