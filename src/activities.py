@@ -212,6 +212,7 @@ class Activities:
 				self.webdriver.find_element(By.CLASS_NAME, "pack_tracking_track_button").click()
 
 		def completeDictionarySearch():
+			self.browser.utils.waitUntilVisible(By.ID, "dictautodd_c", 30)
 			if self.browser.isElementExists(By.ID, "dictautodd_c"):
 				logging.debug(f'Doing Dictionary Search Activity...')
 				textbar = self.webdriver.find_element(By.ID, 'dictautodd_c')
