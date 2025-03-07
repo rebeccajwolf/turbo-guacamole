@@ -290,7 +290,7 @@ class Searches:
 							# Scroll element into view
 							self.webdriver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", random_result)
 							sleep(1)  # Wait for scroll
-							
+							logging.info(f'[BING] In Clicking...')
 							# Try regular click first
 							random_result.click()
 					except ElementClickInterceptedException:
@@ -301,6 +301,7 @@ class Searches:
 									logging.warning(f"JavaScript click failed: {str(e)}")
 									return
 					
+					logging.info(f'[BING] Clicked Link...')
 					# Wait for new tab or stay on same page
 					sleep(2)
 					
