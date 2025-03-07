@@ -217,7 +217,10 @@ class Searches:
 						searchbar = self.browser.utils.waitUntilClickable(
 								By.ID, "sb_form_q", timeToWait=40
 						)
+						searchbar.click()
+						sleep(2)
 						searchbar.clear()
+						sleep(2)
 						term = next(termsCycle)
 						logging.debug(f"term={term}")
 						sleep(1)
@@ -227,9 +230,9 @@ class Searches:
 						sleep(1)
 						searchbar.submit()
 
-						take_screenshot(self.webdriver, "Search_submit")
 						# Random scroll after search
 						sleep(uniform(2, 3))
+						take_screenshot(self.webdriver, "Search_submit")
 						self.random_scroll()
 
 						# Random chance to click a result
