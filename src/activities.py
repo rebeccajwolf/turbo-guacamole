@@ -271,19 +271,19 @@ class Activities:
 		self.browser.utils.resetTabs()
 
 	def completeActivities(self):
-		logging.info("[DAILY SET] " + "Trying to complete the Daily Set...")
-		dailySetPromotions = self.browser.utils.getDailySetPromotions()
-		self.browser.utils.goToRewards()
-		for activity in dailySetPromotions:
-			self.doActivity(activity, dailySetPromotions)
-		logging.info("[DAILY SET] Done")
-
-		# logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
-		# morePromotions: list[dict] = self.browser.utils.getMorePromotions()
+		# logging.info("[DAILY SET] " + "Trying to complete the Daily Set...")
+		# dailySetPromotions = self.browser.utils.getDailySetPromotions()
 		# self.browser.utils.goToRewards()
-		# for activity in morePromotions:
-		# 	self.doActivity(activity, morePromotions)
-		# logging.info("[MORE PROMOS] Done")
+		# for activity in dailySetPromotions:
+		# 	self.doActivity(activity, dailySetPromotions)
+		# logging.info("[DAILY SET] Done")
+
+		logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
+		morePromotions: list[dict] = self.browser.utils.getMorePromotions()
+		self.browser.utils.goToRewards()
+		for activity in morePromotions:
+			self.doActivity(activity, morePromotions)
+		logging.info("[MORE PROMOS] Done")
 
 		# todo Send one email for all accounts?
 		# fixme This is falsely considering some activities incomplete when complete

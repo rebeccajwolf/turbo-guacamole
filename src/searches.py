@@ -232,7 +232,6 @@ class Searches:
 
 						# Random scroll after search
 						sleep(uniform(2, 3))
-						take_screenshot(self.webdriver, "Search_submit")
 						self.random_scroll()
 
 						# Random chance to click a result
@@ -273,7 +272,7 @@ class Searches:
 		def click_random_result(self):
 			"""Click a random search result link with mobile/desktop handling"""
 			try:
-					logging.info(f'[BING] Doing Random link clicking...')
+					logging.debug(f'[BING] Doing Random link clicking...')
 					
 					# Store original window handle
 					original_window = self.webdriver.current_window_handle
@@ -312,13 +311,13 @@ class Searches:
 					
 					if self.browser.mobile:
 							# Mobile: Stay on same page, just scroll
-							logging.info(f"[BING] Mobile Link: {self.webdriver.title}")
+							logging.debug(f"[BING] Mobile Link: {self.webdriver.title}")
 							sleep(uniform(2, 3))
 							self.random_scroll()
 							
 							# Return to search page using back button
 							sleep(uniform(1, 2))
-							logging.info("[BING] Returning to search page")
+							logging.debug("[BING] Returning to search page")
 							self.webdriver.back()
 							
 							# Wait for search results to be visible again
@@ -344,7 +343,7 @@ class Searches:
 									# Switch to new window
 									self.webdriver.switch_to.window(new_window)
 									
-									logging.info(f"[BING] Desktop Link Tab: {self.webdriver.title}")
+									logging.debug(f"[BING] Desktop Link Tab: {self.webdriver.title}")
 
 									# Wait for page load and scroll
 									sleep(uniform(3, 5))
