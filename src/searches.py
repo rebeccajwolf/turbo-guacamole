@@ -268,21 +268,21 @@ class Searches:
 						logging.warning(f"Error during random scroll: {str(e)}")
 
 		def click_random_result(self):
-			"""Click a random search result link with improved error handling"""
+			"""Click a random search result link with mobile/desktop handling"""
 			try:
-
 					logging.info(f'[BING] Doing Random link clicking...')
+					
 					# Store original window handle
 					original_window = self.webdriver.current_window_handle
-					take_screenshot(self.webdriver, "Random_click_doing")
+					
 					# Handle "Continue on Edge" popup
 					self.close_continue_popup()
 					
+					# Different selectors for mobile and desktop
+					selector = "#b_results .b_algoheader a h2" if self.browser.mobile else "#b_results .b_algo h2 a"
+					
 					# Find all search result links
-					if self.browser.mobile:
-						results = self.webdriver.find_elements(By.CSS_SELECTOR, "#b_results .b_algoheader a h2")
-					else:
-						results = self.webdriver.find_elements(By.CSS_SELECTOR, "#b_results .b_algo h2 a")
+					results = self.webdriver.find_elements(By.CSS_SELECTOR, selector)
 					if not results:
 							return
 					
@@ -293,8 +293,7 @@ class Searches:
 							# Scroll element into view
 							self.webdriver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", random_result)
 							sleep(1)  # Wait for scroll
-							take_screenshot(self.webdriver, "IN_Clicking")
-							logging.info(f'[BING] In Clicking...')
+							
 							# Try regular click first
 							random_result.click()
 					except ElementClickInterceptedException:
@@ -304,43 +303,74 @@ class Searches:
 							except Exception as e:
 									logging.warning(f"JavaScript click failed: {str(e)}")
 									return
-					take_screenshot(self.webdriver, "Clicked")
-					logging.info(f'[BING] Clicked Link...')
-					# Wait for new tab or stay on same page
+					
+					# Wait for page load
 					sleep(2)
 					
-					# Handle new window if opened
-					new_window = None
-					try:
-							WebDriverWait(self.webdriver, 3).until(lambda d: len(d.window_handles) > 1)
-							new_window = [h for h in self.webdriver.window_handles if h != original_window][0]
-					except TimeoutException:
-							pass
-
-					if new_window:
-							# Switch to new window
-							self.webdriver.switch_to.window(new_window)
-							
-							logging.info(f"[BING] Random Link Tab: {self.webdriver.title}")
-
-
-							# Wait for page load and scroll
-							sleep(uniform(3, 5))
-							self.random_scroll()
-							
-							# Close tab and switch back
-							self.webdriver.close()
-							self.webdriver.switch_to.window(original_window)
-					else:
-							# Just scroll on current page
+					if self.browser.mobile:
+							# Mobile: Stay on same page, just scroll
+							logging.info(f"[BING] Mobile Link: {self.webdriver.title}")
 							sleep(uniform(2, 3))
 							self.random_scroll()
+							
+							# Return to search page using back button
+							sleep(uniform(1, 2))
+							logging.info("[BING] Returning to search page")
+							self.webdriver.back()
+							
+							# Wait for search results to be visible again
+							try:
+									WebDriverWait(self.webdriver, 10).until(
+											EC.presence_of_element_located((By.CSS_SELECTOR, "#b_results"))
+									)
+							except TimeoutException:
+									logging.warning("[BING] Timeout waiting for search results after back navigation")
+									# Refresh if results don't load
+									self.webdriver.refresh()
+							
+					else:
+							# Desktop: Handle new window if opened
+							new_window = None
+							try:
+									WebDriverWait(self.webdriver, 3).until(lambda d: len(d.window_handles) > 1)
+									new_window = [h for h in self.webdriver.window_handles if h != original_window][0]
+							except TimeoutException:
+									pass
+
+							if new_window:
+									# Switch to new window
+									self.webdriver.switch_to.window(new_window)
+									
+									logging.info(f"[BING] Desktop Link Tab: {self.webdriver.title}")
+
+									# Wait for page load and scroll
+									sleep(uniform(3, 5))
+									self.random_scroll()
+									
+									# Close tab and switch back
+									self.webdriver.close()
+									self.webdriver.switch_to.window(original_window)
+							else:
+									# Just scroll on current page
+									sleep(uniform(2, 3))
+									self.random_scroll()
 					
 			except Exception as e:
 					logging.warning(f"Error clicking random result: {str(e)}")
-					# Ensure we're back on the original window
-					if original_window in self.webdriver.window_handles:
-							self.webdriver.switch_to.window(original_window)
+					# For mobile, ensure we return to search page on error
+					if self.browser.mobile:
+							try:
+									self.webdriver.back()
+									# Wait for search results after error recovery
+									WebDriverWait(self.webdriver, 10).until(
+											EC.presence_of_element_located((By.CSS_SELECTOR, "#b_results"))
+									)
+							except:
+									logging.error("[BING] Failed to return to search page after error")
+					# For desktop, ensure we're back on the original window
+					else:
+							if original_window in self.webdriver.window_handles:
+									self.webdriver.switch_to.window(original_window)
 
 
 		def close_continue_popup(self):
