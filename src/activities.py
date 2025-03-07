@@ -52,6 +52,7 @@ class Activities:
 		# click poll option
 		while res:
 			try:
+				self.browser.waitUntilVisible(By.ID, 'btPollOverlay', 30)
 				sleep(3)
 				self.browser.utils.waitUntilClickable(By.ID, 'btoption0', timeToWait=20)
 				take_screenshot(self.webdriver, "Poll_Quiz")
@@ -60,9 +61,8 @@ class Activities:
 				sleep(7)
 				if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
 					res = False
-			except Exception as e:
-				take_screenshot(self.webdriver, "Poll_Quiz_Error")
-				logging.warning(f'Error occured while doing Poll Quiz: {e}')
+			except:
+				pass
 
 
 	def waitUntilQuizLoads(self):
@@ -198,11 +198,55 @@ class Activities:
 			getAnswerCode(answerEncodeKey, answerTitle),
 		)
 
+	def searchOnBing(self, query: str):
+
+		def completeTrackingSeach():
+			if self.browser.isElementExists(By.ID, "g_pack_track_form"):
+				logging.debug(f'Doing Tracking Search Activity...')
+				textbar = self.webdriver.find_element(By.XPATH, '//*[@class="tracking_Number_Input"]/input')
+				sleep(1)
+				textbar.click()
+				sleep(1)
+				textbar.send_keys("9205 5000 0000 0000 0000 00")
+				sleep(1)
+				self.webdriver.find_element(By.CLASS_NAME, "pack_tracking_track_button").click()
+
+		def completeDictionarySearch():
+			if self.browser.isElementExists(By.ID, "dictautodd_c"):
+				logging.debug(f'Doing Dictionary Search Activity...')
+				textbar = self.webdriver.find_element(By.ID, 'dictautodd_c')
+				sleep(1)
+				textbar.click()
+				sleep(1)
+				textbar.send_keys("demure")
+				take_screenshot(self.webdriver, "dict_avtivity")
+				sleep(1)
+				self.webdriver.find_element(By.ID, "dc_searchbtn").click()
+				take_screenshot(self.webdriver, "submit_dict_avtivity")
+
+		with contextlib.suppress(TimeoutException):
+				self.browser.utils.waitUntilVisible(By.ID, "modern-flyout", timeToWait=30)
+				searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q", timeToWait=30)
+				self.browser.utils.click(searchbar)
+				sleep(1)
+				for char in query:
+					searchbar.send_keys(char)
+					sleep(uniform(0.2, 0.45))
+				sleep(3)
+				searchbar.submit()
+				sleep(2)
+
+				if "define" in query:
+					completeDictionarySearch()
+				elif "tracking" in query:
+					completeTrackingSeach()
+
+
 	def doActivity(self, activity: dict, activities: list[dict]) -> None:
 		try:
 			activityTitle = cleanupActivityTitle(activity["title"])
 			logging.debug(f"activityTitle={activityTitle}")
-			if activity["complete"] is True or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
+			if activity["complete"] is None or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
 				logging.debug("Already done, returning")
 				return
 			if "is_unlocked" in activity["attributes"] and activity["attributes"]["is_unlocked"] == "False":
@@ -241,18 +285,11 @@ class Activities:
 			sleep(7)
 
 
-			with contextlib.suppress(TimeoutException):
-				searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q", timeToWait=20)
-				self.browser.utils.click(searchbar)
+			
 			if activityTitle in CONFIG.activities.search:
-				sleep(1)
-				for char in CONFIG.activities.search[activityTitle]:
-					searchbar.send_keys(char)
-					sleep(uniform(0.2, 0.45))
-				sleep(5)
-				searchbar.submit()
+				self.searchOnBing(CONFIG.activities.search[activityTitle])
 			elif "poll" in activityTitle:
-				logging.info(f"[ACTIVITY] Completing poll of card {cardId}")
+				# logging.info(f"[ACTIVITY] Completing poll of card {cardId}")
 				# Complete survey for a specific scenario
 				self.completeSurvey()
 			elif activity["promotionType"] == "urlreward":
@@ -272,7 +309,7 @@ class Activities:
 		except Exception:
 			logging.error(f"[ACTIVITY] Error doing {activityTitle}", exc_info=True)
 		logging.debug(f"Entering Sleep after Activity")
-		sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+		# sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
 		logging.debug(f"Finished Sleep after Activity")
 		self.browser.utils.resetTabs()
 
