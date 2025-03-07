@@ -227,7 +227,7 @@ class Searches:
 						sleep(1)
 						searchbar.submit()
 
-
+						take_screenshot(self.webdriver, "Search_submit")
 						# Random scroll after search
 						sleep(uniform(2, 3))
 						self.random_scroll()
