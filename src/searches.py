@@ -279,7 +279,10 @@ class Searches:
 					self.close_continue_popup()
 					
 					# Find all search result links
-					results = self.webdriver.find_elements(By.CSS_SELECTOR, "#b_results .b_algo h2 a")
+					if self.browser.mobile:
+						results = self.webdriver.find_elements(By.CSS_SELECTOR, "#b_results .b_algoheader a h2")
+					else:
+						results = self.webdriver.find_elements(By.CSS_SELECTOR, "#b_results .b_algo h2 a")
 					if not results:
 							return
 					
