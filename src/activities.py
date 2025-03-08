@@ -29,19 +29,25 @@ class Activities:
 		# self.browser.utils.switchToNewTab()
 
 	def openMorePromotionsActivity(self, cardId: int):
-		cardId += 1
-		# Open the More Promotions activity for the given cardId
-		element = self.webdriver.find_element(
-			By.CSS_SELECTOR,
-			f"#more-activities > .m-card-group > .ng-scope:nth-child({cardId}) #ma-card-link .pointLink",
-		)
-		# Scroll element into view
-		self.webdriver.execute_script("arguments[0].scrollIntoView(true);", element)
-		sleep(3)  # Wait for scroll
-		take_screenshot(self.webdriver, f"Before_Clicking_cardID{cardId}")
-		self.browser.utils.mouseClick(element)
-		sleep(5)  # Add small delay to ensure click is registered
-		# self.browser.utils.switchToNewTab()
+		while True:
+			try:
+				cardId += 1
+				# Open the More Promotions activity for the given cardId
+				element = self.webdriver.find_element(
+					By.CSS_SELECTOR,
+					f"#more-activities > .m-card-group > .ng-scope:nth-child({cardId}) #ma-card-link .pointLink",
+				)
+				# Scroll element into view
+				self.webdriver.execute_script("arguments[0].scrollIntoView(true);", element)
+				sleep(3)  # Wait for scroll
+				take_screenshot(self.webdriver, f"Before_Clicking_cardID{cardId}")
+				self.browser.utils.mouseClick(element)
+				sleep(5)  # Add small delay to ensure click is registered
+				# self.browser.utils.switchToNewTab()
+				break
+			except(NoSuchElementException):
+				self.webdriver.refresh()
+				continue
 
 	def completeSearch(self):
 		# Simulate completing a search activity
@@ -61,8 +67,10 @@ class Activities:
 				self.browser.utils.waitUntilClickable(By.ID, 'btoption0', timeToWait=20)
 				take_screenshot(self.webdriver, "Poll_Quiz")
 				choices = ['btoption0', 'btoption1']
-				self.webdriver.find_element(By.ID, choice(choices)).click()
-				sleep(7)
+				option = self.webdriver.find_element(By.ID, choice(choices))
+				sleep(3)
+				self.browser.utils.mouseClick(option)
+				sleep(4)
 				if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
 					res = False
 			except:
@@ -325,19 +333,19 @@ class Activities:
 		self.browser.utils.resetTabs()
 
 	def completeActivities(self):
-		# logging.info("[DAILY SET] " + "Trying to complete the Daily Set...")
-		# dailySetPromotions = self.browser.utils.getDailySetPromotions()
-		# self.browser.utils.goToRewards()
-		# for activity in dailySetPromotions:
-		# 	self.doActivity(activity, dailySetPromotions)
-		# logging.info("[DAILY SET] Done")
-
-		logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
-		morePromotions: list[dict] = self.browser.utils.getMorePromotions()
+		logging.info("[DAILY SET] " + "Trying to complete the Daily Set...")
+		dailySetPromotions = self.browser.utils.getDailySetPromotions()
 		self.browser.utils.goToRewards()
-		for activity in morePromotions:
-			self.doActivity(activity, morePromotions)
-		logging.info("[MORE PROMOS] Done")
+		for activity in dailySetPromotions:
+			self.doActivity(activity, dailySetPromotions)
+		logging.info("[DAILY SET] Done")
+
+		# logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
+		# morePromotions: list[dict] = self.browser.utils.getMorePromotions()
+		# self.browser.utils.goToRewards()
+		# for activity in morePromotions:
+		# 	self.doActivity(activity, morePromotions)
+		# logging.info("[MORE PROMOS] Done")
 
 		# todo Send one email for all accounts?
 		# fixme This is falsely considering some activities incomplete when complete
