@@ -232,6 +232,8 @@ class Activities:
 			searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q", timeToWait=30)
 			self.browser.utils.click(searchbar)
 			sleep(1)
+			searchbar.clear()
+			sleep(1)
 			for char in query:
 				searchbar.send_keys(char)
 				sleep(uniform(0.2, 0.45))
