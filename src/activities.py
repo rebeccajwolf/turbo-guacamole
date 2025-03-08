@@ -266,78 +266,82 @@ class Activities:
 		except Exception as e:
 			take_screenshot(self.webdriver, "searchOnBing_error")
 			logging.warning(f"Error Occured while Doing Activity: {e}")
+			raise
 
 
 	def doActivity(self, activity: dict, activities: list[dict]) -> None:
-		try:
-			activityTitle = cleanupActivityTitle(activity["title"])
-			logging.debug(f"activityTitle={activityTitle}")
-			if activity["complete"] is None or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
-				logging.debug("Already done, returning")
-				return
-			if "is_unlocked" in activity["attributes"] and activity["attributes"]["is_unlocked"] == "False":
-				logging.debug("Activity locked, returning")
-				return
-			if activityTitle in CONFIG.activities.ignore:
-				logging.debug(f"Ignoring {activityTitle}")
-				return
+		while True:
+			try:
+				activityTitle = cleanupActivityTitle(activity["title"])
+				logging.debug(f"activityTitle={activityTitle}")
+				if activity["complete"] is None or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
+					logging.debug("Already done, returning")
+					return
+				if "is_unlocked" in activity["attributes"] and activity["attributes"]["is_unlocked"] == "False":
+					logging.debug("Activity locked, returning")
+					return
+				if activityTitle in CONFIG.activities.ignore:
+					logging.debug(f"Ignoring {activityTitle}")
+					return
+
+					
+				# Open the activity for the activity
+				cardId = activities.index(activity)
+				isDailySet = (
+					"daily_set_date" in activity["attributes"]
+					and activity["attributes"]["daily_set_date"]
+				)
+
+
+				if isDailySet:
+					self.openDailySetActivity(cardId)
+				else:
+					self.openMorePromotionsActivity(cardId)
+
+
+				sleep(7)
+				try:
+					if self.webdriver.find_element(By.XPATH, '//*[@id="modal-host"]/div[2]/button').is_displayed():
+						self.webdriver.find_element(By.XPATH, '//*[@id="modal-host"]/div[2]/button').click()
+						return
+				except:
+					pass
+				finally:
+					# Check if new tab exists before switching
+					if len(self.webdriver.window_handles) > 1:
+						self.browser.utils.switchToNewTab()
+				sleep(7)
+
 
 				
-			# Open the activity for the activity
-			cardId = activities.index(activity)
-			isDailySet = (
-				"daily_set_date" in activity["attributes"]
-				and activity["attributes"]["daily_set_date"]
-			)
-
-
-			if isDailySet:
-				self.openDailySetActivity(cardId)
-			else:
-				self.openMorePromotionsActivity(cardId)
-
-
-			sleep(7)
-			try:
-				if self.webdriver.find_element(By.XPATH, '//*[@id="modal-host"]/div[2]/button').is_displayed():
-					self.webdriver.find_element(By.XPATH, '//*[@id="modal-host"]/div[2]/button').click()
-					return
-			except:
-				pass
-			finally:
-				# Check if new tab exists before switching
-				if len(self.webdriver.window_handles) > 1:
-					self.browser.utils.switchToNewTab()
-			sleep(7)
-
-
-			
-			if activityTitle in CONFIG.activities.search:
-				self.searchOnBing(CONFIG.activities.search[activityTitle])
-			elif "poll" in activityTitle:
-				# logging.info(f"[ACTIVITY] Completing poll of card {cardId}")
-				# Complete survey for a specific scenario
-				self.completeSurvey()
-			elif activity["promotionType"] == "urlreward":
-				# Complete search for URL reward
-				self.completeSearch()
-			elif activity["promotionType"] == "quiz":
-				# Complete different types of quizzes based on point progress max
-				if activity["pointProgressMax"] == 10:
-					self.completeABC()
-				elif activity["pointProgressMax"] in [30, 40]:
-					self.completeQuiz()
-				elif activity["pointProgressMax"] == 50:
-					self.completeThisOrThat()
-			else:
-				# Default to completing search
-				self.completeSearch()
-		except Exception:
-			logging.error(f"[ACTIVITY] Error doing {activityTitle}", exc_info=True)
-		logging.debug(f"Entering Sleep after Activity")
-		# sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
-		logging.debug(f"Finished Sleep after Activity")
-		self.browser.utils.resetTabs()
+				if activityTitle in CONFIG.activities.search:
+					self.searchOnBing(CONFIG.activities.search[activityTitle])
+				elif "poll" in activityTitle:
+					# logging.info(f"[ACTIVITY] Completing poll of card {cardId}")
+					# Complete survey for a specific scenario
+					self.completeSurvey()
+				elif activity["promotionType"] == "urlreward":
+					# Complete search for URL reward
+					self.completeSearch()
+				elif activity["promotionType"] == "quiz":
+					# Complete different types of quizzes based on point progress max
+					if activity["pointProgressMax"] == 10:
+						self.completeABC()
+					elif activity["pointProgressMax"] in [30, 40]:
+						self.completeQuiz()
+					elif activity["pointProgressMax"] == 50:
+						self.completeThisOrThat()
+				else:
+					# Default to completing search
+					self.completeSearch()
+			except Exception:
+				logging.error(f"[ACTIVITY] Error doing {activityTitle}", exc_info=True)
+				self.browser.utils.resetTabs()
+				continue
+			logging.debug(f"Entering Sleep after Activity")
+			# sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+			logging.debug(f"Finished Sleep after Activity")
+			self.browser.utils.resetTabs()
 
 	def completeActivities(self):
 		# logging.info("[DAILY SET] " + "Trying to complete the Daily Set...")
