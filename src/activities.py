@@ -82,7 +82,6 @@ class Activities:
 				# self.browser.waitUntilVisible(By.ID, 'btPollOverlay', 30)
 				sleep(3)
 				self.browser.utils.waitUntilClickable(By.ID, 'btoption0', timeToWait=20)
-				take_screenshot(self.webdriver, "Poll_Quiz")
 				choices = ['btoption0', 'btoption1']
 				option = self.webdriver.find_element(By.ID, choice(choices))
 				sleep(3)
@@ -116,67 +115,60 @@ class Activities:
 
 	def completeQuiz(self):
 		# Simulate completing a quiz activity
-		try:
-			sleep(12)
-			if not self.waitUntilQuizLoads():
-				self.browser.utils.resetTabs()
-				return
-			with contextlib.suppress(TimeoutException):
-				startQuiz = self.browser.utils.waitUntilQuizLoads()
-				self.browser.utils.click(startQuiz)
-			take_screenshot(self.webdriver, "Quiz_Start")
-			self.browser.utils.waitUntilVisible(
-				By.XPATH, '//*[@id="currentQuestionContainer"]/div/div[1]', 180
-			)
-			currentQuestionNumber: int = self.webdriver.execute_script(
-				"return _w.rewardsQuizRenderInfo.currentQuestionNumber"
-			)
-			numberOfQuestions = self.webdriver.execute_script(
-				"return _w.rewardsQuizRenderInfo.maxQuestions"
-			)
-			numberOfOptions = self.webdriver.execute_script(
-				"return _w.rewardsQuizRenderInfo.numberOfOptions"
-			)
-			answerdQuestions = self.webdriver.execute_script(
-				"return _w.rewardsQuizRenderInfo.CorrectlyAnsweredQuestionCount"
-			)
-			numberOfQuestions -= answerdQuestions
-			for _ in range(numberOfQuestions):
-				if numberOfOptions == 8:
-					answers = []
-					for i in range(numberOfOptions):
-						isCorrectOption = self.webdriver.find_element(
+		sleep(12)
+		if not self.waitUntilQuizLoads():
+			self.browser.utils.resetTabs()
+			return
+		with contextlib.suppress(TimeoutException):
+			startQuiz = self.browser.utils.waitUntilQuizLoads()
+			self.browser.utils.click(startQuiz)
+		self.browser.utils.waitUntilVisible(
+			By.XPATH, '//*[@id="currentQuestionContainer"]/div/div[1]', 180
+		)
+		currentQuestionNumber: int = self.webdriver.execute_script(
+			"return _w.rewardsQuizRenderInfo.currentQuestionNumber"
+		)
+		numberOfQuestions = self.webdriver.execute_script(
+			"return _w.rewardsQuizRenderInfo.maxQuestions"
+		)
+		numberOfOptions = self.webdriver.execute_script(
+			"return _w.rewardsQuizRenderInfo.numberOfOptions"
+		)
+		answerdQuestions = self.webdriver.execute_script(
+			"return _w.rewardsQuizRenderInfo.CorrectlyAnsweredQuestionCount"
+		)
+		numberOfQuestions -= answerdQuestions
+		for _ in range(numberOfQuestions):
+			if numberOfOptions == 8:
+				answers = []
+				for i in range(numberOfOptions):
+					isCorrectOption = self.webdriver.find_element(
+						By.ID, f"rqAnswerOption{i}"
+					).get_attribute("iscorrectoption")
+					if isCorrectOption and isCorrectOption.lower() == "true":
+						answers.append(f"rqAnswerOption{i}")
+				for answer in answers:
+					element = self.browser.utils.waitUntilClickable(By.ID, answer)
+					self.browser.utils.mouseClick(element)
+					self.browser.utils.waitUntilQuestionRefresh()
+			elif numberOfOptions in [2, 3, 4]:
+				correctOption = self.webdriver.execute_script(
+					"return _w.rewardsQuizRenderInfo.correctAnswer"
+				)
+				for i in range(numberOfOptions):
+					if (
+						self.webdriver.find_element(
 							By.ID, f"rqAnswerOption{i}"
-						).get_attribute("iscorrectoption")
-						if isCorrectOption and isCorrectOption.lower() == "true":
-							answers.append(f"rqAnswerOption{i}")
-					for answer in answers:
-						element = self.browser.utils.waitUntilClickable(By.ID, answer)
+						).get_attribute("data-option")
+						== correctOption
+					):
+						element = self.browser.utils.waitUntilClickable(
+							By.ID, f"rqAnswerOption{i}"
+						)
 						self.browser.utils.mouseClick(element)
-						self.browser.utils.waitUntilQuestionRefresh()
-				elif numberOfOptions in [2, 3, 4]:
-					correctOption = self.webdriver.execute_script(
-						"return _w.rewardsQuizRenderInfo.correctAnswer"
-					)
-					for i in range(numberOfOptions):
-						if (
-							self.webdriver.find_element(
-								By.ID, f"rqAnswerOption{i}"
-							).get_attribute("data-option")
-							== correctOption
-						):
-							element = self.browser.utils.waitUntilClickable(
-								By.ID, f"rqAnswerOption{i}"
-							)
-							self.browser.utils.mouseClick(element)
 
-							self.browser.utils.waitUntilQuestionRefresh()
-							break
-			take_screenshot(self.webdriver, "Quiz_Finish")
-		except Exception as e:
-			take_screenshot(self.webdriver, "Quiz_Error")
-			logging.warning(f'Error occured while doing Quiz: {e}')
-			raise
+						self.browser.utils.waitUntilQuestionRefresh()
+						break
 
 	def completeABC(self):
 		# Simulate completing an ABC activity
@@ -285,22 +277,21 @@ class Activities:
 
 
 	def doActivity(self, activity: dict, activities: list[dict]) -> None:
-		while True:
+		max_retries = 4
+		retry_count = 0
+		while retry_count < max_retries:
 			try:
 				activityTitle = cleanupActivityTitle(activity["title"])
 				logging.debug(f"activityTitle={activityTitle}")
-				if not "quiz" in activityTitle:
+				if activity["complete"] is None or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
 					logging.debug("Already done, returning")
 					return
-				# if activity["complete"] is None or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
-				# 	logging.debug("Already done, returning")
-				# 	return
-				# if "is_unlocked" in activity["attributes"] and activity["attributes"]["is_unlocked"] == "False":
-				# 	logging.debug("Activity locked, returning")
-				# 	return
-				# if activityTitle in CONFIG.activities.ignore:
-				# 	logging.debug(f"Ignoring {activityTitle}")
-				# 	return
+				if "is_unlocked" in activity["attributes"] and activity["attributes"]["is_unlocked"] == "False":
+					logging.debug("Activity locked, returning")
+					return
+				if activityTitle in CONFIG.activities.ignore:
+					logging.debug(f"Ignoring {activityTitle}")
+					return
 
 					
 				# Open the activity for the activity
@@ -357,22 +348,24 @@ class Activities:
 					# Default to completing search
 					self.completeSearch()
 			except Exception:
-				logging.error(f"[ACTIVITY] Error doing {activityTitle}", exc_info=True)
+				retry_count += 1
+				if retry_count >= max_retries:
+					logging.error(f"[ACTIVITY] Error doing {activityTitle}", exc_info=True)
 				self.browser.utils.resetTabs()
 				continue
 			logging.debug(f"Entering Sleep after Activity")
-			# sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+			sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
 			logging.debug(f"Finished Sleep after Activity")
 			self.browser.utils.resetTabs()
 			break
 
 	def completeActivities(self):
-		# logging.info("[DAILY SET] " + "Trying to complete the Daily Set...")
-		# dailySetPromotions = self.browser.utils.getDailySetPromotions()
-		# self.browser.utils.goToRewards()
-		# for activity in dailySetPromotions:
-		# 	self.doActivity(activity, dailySetPromotions)
-		# logging.info("[DAILY SET] Done")
+		logging.info("[DAILY SET] " + "Trying to complete the Daily Set...")
+		dailySetPromotions = self.browser.utils.getDailySetPromotions()
+		self.browser.utils.goToRewards()
+		for activity in dailySetPromotions:
+			self.doActivity(activity, dailySetPromotions)
+		logging.info("[DAILY SET] Done")
 
 		logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
 		morePromotions: list[dict] = self.browser.utils.getMorePromotions()

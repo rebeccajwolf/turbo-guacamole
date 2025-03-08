@@ -60,7 +60,7 @@ retries:
   strategy: EXPONENTIAL # Set it to CONSTANT to use the same delay between each retries.
     # Else, increase it exponentially each time.
 cooldown:
-  min: 300 # The minimal wait time between two searches/activities
+  min: 720 # The minimal wait time between two searches/activities
   max: 1020 # The maximal wait time between two searches/activities
 search:
   type: both # Set it to 'mobile' or 'desktop' to only complete searches on one plateform,

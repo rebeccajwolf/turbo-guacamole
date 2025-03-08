@@ -222,37 +222,37 @@ def executeBot(currentAccount):
 					f"[POINTS] You have {formatNumber(startingPoints)} points on your account"
 				)
 				Activities(desktopBrowser).completeActivities()
-				# PunchCards(desktopBrowser).completePunchCards()
+				PunchCards(desktopBrowser).completePunchCards()
 				# VersusGame(desktopBrowser).completeVersusGame()
 
-				# with Searches(desktopBrowser) as searches:
-				# 	searches.bingSearches()
+				with Searches(desktopBrowser) as searches:
+					searches.bingSearches()
 
-				# goalPoints = utils.getGoalPoints()
-				# goalTitle = utils.getGoalTitle()
+				goalPoints = utils.getGoalPoints()
+				goalTitle = utils.getGoalTitle()
 
 				remainingSearches = desktopBrowser.getRemainingSearches(
 					desktopAndMobile=True
 				)
 				accountPoints = utils.getAccountPoints()
 
-		# if CONFIG.search.type in ("mobile", "both", None):
-		# 	with Browser(mobile=True, account=currentAccount) as mobileBrowser:
-		# 		utils = mobileBrowser.utils
-		# 		Login(mobileBrowser).login()
-		# 		if startingPoints is None:
-		# 			startingPoints = utils.getAccountPoints()
-		# 		ReadToEarn(mobileBrowser).completeReadToEarn()
-		# 		with Searches(mobileBrowser) as searches:
-		# 			searches.bingSearches()
+		if CONFIG.search.type in ("mobile", "both", None):
+			with Browser(mobile=True, account=currentAccount) as mobileBrowser:
+				utils = mobileBrowser.utils
+				Login(mobileBrowser).login()
+				if startingPoints is None:
+					startingPoints = utils.getAccountPoints()
+				ReadToEarn(mobileBrowser).completeReadToEarn()
+				with Searches(mobileBrowser) as searches:
+					searches.bingSearches()
 
-		# 		goalPoints = utils.getGoalPoints()
-		# 		goalTitle = utils.getGoalTitle()
+				goalPoints = utils.getGoalPoints()
+				goalTitle = utils.getGoalTitle()
 
-		# 		remainingSearches = mobileBrowser.getRemainingSearches(
-		# 			desktopAndMobile=True
-		# 		)
-		# 		accountPoints = utils.getAccountPoints()
+				remainingSearches = mobileBrowser.getRemainingSearches(
+					desktopAndMobile=True
+				)
+				accountPoints = utils.getAccountPoints()
 
 		logging.info(
 			f"[POINTS] You have earned {formatNumber(accountPoints - startingPoints)} points this run !"
