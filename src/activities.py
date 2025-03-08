@@ -37,7 +37,7 @@ class Activities:
 	def openMorePromotionsActivity(self, offerId: str):
 		while True:
 			try:
-				cardId += 1
+				# cardId += 1
 				# Open the More Promotions activity for the given cardId
 				# element = self.webdriver.find_element(
 				# 	By.CSS_SELECTOR,
