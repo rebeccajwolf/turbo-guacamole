@@ -283,7 +283,7 @@ class Activities:
 			try:
 				activityTitle = cleanupActivityTitle(activity["title"])
 				logging.debug(f"activityTitle={activityTitle}")
-				if activity["complete"] is None or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
+				if activity["complete"] is True or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
 					logging.debug("Already done, returning")
 					return
 				if "is_unlocked" in activity["attributes"] and activity["attributes"]["is_unlocked"] == "False":
