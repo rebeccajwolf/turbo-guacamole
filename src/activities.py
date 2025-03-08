@@ -54,7 +54,7 @@ class Activities:
 				# Scroll element into view
 				self.webdriver.execute_script("arguments[0].scrollIntoView(true);", element)
 				sleep(3)  # Wait for scroll
-				take_screenshot(self.webdriver, f"Before_Clicking_cardID{cardId}")
+				take_screenshot(self.webdriver, f"Before_Clicking_cardID{offerId}")
 				self.browser.utils.mouseClick(element)
 				sleep(5)  # Add small delay to ensure click is registered
 				# self.browser.utils.switchToNewTab()
