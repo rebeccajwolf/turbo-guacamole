@@ -33,7 +33,7 @@ class Activities:
 		# Open the More Promotions activity for the given cardId
 		element = self.webdriver.find_element(
 			By.CSS_SELECTOR,
-			f"#more-activities > .m-card-group > .ng-scope:nth-child({cardId}) .ds-card-sec",
+			f"#more-activities > .m-card-group > .ng-scope:nth-child({cardId}) #ma-card-link .pointLink",
 		)
 		self.browser.utils.click(element)
 		sleep(5)  # Add small delay to ensure click is registered
@@ -220,10 +220,8 @@ class Activities:
 				textbar.click()
 				sleep(1)
 				textbar.send_keys("demure")
-				take_screenshot(self.webdriver, "dict_avtivity")
 				sleep(1)
 				self.webdriver.find_element(By.ID, "dc_searchbtn").click()
-				take_screenshot(self.webdriver, "submit_dict_avtivity")
 
 		try:
 			# self.browser.utils.waitUntilVisible(By.ID, "modern-flyout", timeToWait=30)
@@ -241,6 +239,7 @@ class Activities:
 				completeDictionarySearch()
 			elif "tracking" in query:
 				completeTrackingSeach()
+			take_screenshot(self.webdriver, "searchOnBing_Complete")
 		except Exception as e:
 			take_screenshot(self.webdriver, "searchOnBing_error")
 			logging.warning(f"Error Occured while Doing Activity: {e}")
