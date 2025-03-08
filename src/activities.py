@@ -124,6 +124,7 @@ class Activities:
 			with contextlib.suppress(TimeoutException):
 				startQuiz = self.browser.utils.waitUntilQuizLoads()
 				self.browser.utils.click(startQuiz)
+			take_screenshot(self.webdriver, "Quiz_Start")
 			self.browser.utils.waitUntilVisible(
 				By.XPATH, '//*[@id="currentQuestionContainer"]/div/div[1]', 180
 			)
@@ -171,6 +172,7 @@ class Activities:
 
 							self.browser.utils.waitUntilQuestionRefresh()
 							break
+			take_screenshot(self.webdriver, "Quiz_Finish")
 		except Exception as e:
 			take_screenshot(self.webdriver, "Quiz_Error")
 			logging.warning(f'Error occured while doing Quiz: {e}')
