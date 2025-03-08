@@ -201,7 +201,7 @@ class Activities:
 	def searchOnBing(self, query: str):
 
 		def completeTrackingSeach():
-			if self.browser.isElementExists(By.ID, "g_pack_track_form"):
+			if self.browser.utils.isElementExists(By.ID, "g_pack_track_form"):
 				logging.debug(f'Doing Tracking Search Activity...')
 				textbar = self.webdriver.find_element(By.XPATH, '//*[@class="tracking_Number_Input"]/input')
 				sleep(1)
@@ -213,7 +213,7 @@ class Activities:
 
 		def completeDictionarySearch():
 			self.browser.utils.waitUntilVisible(By.ID, "dictautodd_c", 30)
-			if self.browser.isElementExists(By.ID, "dictautodd_c"):
+			if self.browser.utils.isElementExists(By.ID, "dictautodd_c"):
 				logging.debug(f'Doing Dictionary Search Activity...')
 				textbar = self.webdriver.find_element(By.ID, 'dictautodd_c')
 				sleep(1)
