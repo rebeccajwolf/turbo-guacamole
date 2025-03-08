@@ -37,7 +37,7 @@ class Activities:
 		)
 		# Scroll element into view
 		self.webdriver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element)
-		sleep(1)  # Wait for scroll
+		sleep(3)  # Wait for scroll
 		take_screenshot(self.webdriver, f"Before_Clicking_cardID{cardId}")
 		self.browser.utils.click(element)
 		sleep(5)  # Add small delay to ensure click is registered
