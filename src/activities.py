@@ -64,6 +64,7 @@ class Activities:
 			try:
 				if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
 					res = False
+				logging.debug(f"Poll Quiz Doing...")
 				self.browser.waitUntilVisible(By.ID, 'btPollOverlay', 30)
 				sleep(3)
 				self.browser.utils.waitUntilClickable(By.ID, 'btoption0', timeToWait=20)
