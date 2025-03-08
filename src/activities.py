@@ -130,13 +130,17 @@ class Activities:
 			currentQuestionNumber: int = self.webdriver.execute_script(
 				"return _w.rewardsQuizRenderInfo.currentQuestionNumber"
 			)
-			maxQuestions = self.webdriver.execute_script(
+			numberOfQuestions = self.webdriver.execute_script(
 				"return _w.rewardsQuizRenderInfo.maxQuestions"
 			)
 			numberOfOptions = self.webdriver.execute_script(
 				"return _w.rewardsQuizRenderInfo.numberOfOptions"
 			)
-			for _ in range(currentQuestionNumber, maxQuestions + 1):
+			answerdQuestions = self.webdriver.execute_script(
+				"return _w.rewardsQuizRenderInfo.CorrectlyAnsweredQuestionCount"
+			)
+			numberOfQuestions -= answerdQuestions
+			for _ in range(numberOfQuestions):
 				if numberOfOptions == 8:
 					answers = []
 					for i in range(numberOfOptions):
@@ -146,8 +150,8 @@ class Activities:
 						if isCorrectOption and isCorrectOption.lower() == "true":
 							answers.append(f"rqAnswerOption{i}")
 					for answer in answers:
-						element = self.webdriver.find_element(By.ID, answer)
-						self.browser.utils.click(element)
+						element = self.browser.utils.waitUntilClickable(By.ID, answer)
+						self.browser.utils.mouseClick(element)
 						self.browser.utils.waitUntilQuestionRefresh()
 				elif numberOfOptions in [2, 3, 4]:
 					correctOption = self.webdriver.execute_script(
@@ -160,10 +164,10 @@ class Activities:
 							).get_attribute("data-option")
 							== correctOption
 						):
-							element = self.webdriver.find_element(
+							element = self.browser.utils.waitUntilClickable(
 								By.ID, f"rqAnswerOption{i}"
 							)
-							self.browser.utils.click(element)
+							self.browser.utils.mouseClick(element)
 
 							self.browser.utils.waitUntilQuestionRefresh()
 							break
@@ -283,15 +287,18 @@ class Activities:
 			try:
 				activityTitle = cleanupActivityTitle(activity["title"])
 				logging.debug(f"activityTitle={activityTitle}")
-				if activity["complete"] is None or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
+				if not "quiz" in activityTitle:
 					logging.debug("Already done, returning")
 					return
-				if "is_unlocked" in activity["attributes"] and activity["attributes"]["is_unlocked"] == "False":
-					logging.debug("Activity locked, returning")
-					return
-				if activityTitle in CONFIG.activities.ignore:
-					logging.debug(f"Ignoring {activityTitle}")
-					return
+				# if activity["complete"] is None or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
+				# 	logging.debug("Already done, returning")
+				# 	return
+				# if "is_unlocked" in activity["attributes"] and activity["attributes"]["is_unlocked"] == "False":
+				# 	logging.debug("Activity locked, returning")
+				# 	return
+				# if activityTitle in CONFIG.activities.ignore:
+				# 	logging.debug(f"Ignoring {activityTitle}")
+				# 	return
 
 					
 				# Open the activity for the activity
