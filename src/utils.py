@@ -26,11 +26,11 @@ from requests import Session
 from functools import wraps
 from requests.adapters import HTTPAdapter
 from selenium.common import (
-    ElementClickInterceptedException,
-    ElementNotInteractableException,
-    NoSuchElementException,
-    TimeoutException,
-    StaleElementReferenceException
+	ElementClickInterceptedException,
+	ElementNotInteractableException,
+	NoSuchElementException,
+	TimeoutException,
+	StaleElementReferenceException
 )
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
@@ -760,6 +760,13 @@ class Utils:
 			except NoSuchElementException:
 					return False
 			return True
+
+	def jsClick(self, element: WebElement) -> None:
+		"""Click any given element"""
+		try:
+			self.webdriver.execute_script("arguments[0].click();", element)
+		except Exception:
+			logging.exception(msg=f'Exception when JS clicking element {element}.')
 
 	def click(self, element: WebElement) -> None:
 		try:

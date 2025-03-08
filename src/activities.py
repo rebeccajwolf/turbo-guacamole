@@ -230,7 +230,7 @@ class Activities:
 		try:
 			# self.browser.utils.waitUntilVisible(By.ID, "modern-flyout", timeToWait=30)
 			searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q", timeToWait=30)
-			self.browser.utils.click(searchbar)
+			self.browser.utils.jsClick(searchbar)
 			sleep(2)
 			searchbar.clear()
 			sleep(2)
