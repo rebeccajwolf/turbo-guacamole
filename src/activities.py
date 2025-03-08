@@ -36,7 +36,7 @@ class Activities:
 			f"#more-activities > .m-card-group > .ng-scope:nth-child({cardId}) #ma-card-link .pointLink",
 		)
 		# Scroll element into view
-		self.webdriver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element)
+		self.webdriver.execute_script("arguments[0].scrollIntoView(true);", element)
 		sleep(3)  # Wait for scroll
 		take_screenshot(self.webdriver, f"Before_Clicking_cardID{cardId}")
 		self.browser.utils.click(element)
