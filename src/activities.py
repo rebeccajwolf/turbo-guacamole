@@ -238,7 +238,7 @@ class Activities:
 				searchbar.send_keys(char)
 				sleep(uniform(0.2, 0.45))
 			sleep(3)
-			take_screenshot(self.webdriver, "searchOnBing_BeforeSubmit")
+			take_screenshot(self.webdriver, f"searchOnBing_BeforeSubmit{query}")
 			searchbar.submit()
 			sleep(2)
 
