@@ -66,8 +66,10 @@ class Activities:
 					res = False
 				logging.debug(f"Poll Quiz Doing...")
 				self.browser.waitUntilVisible(By.ID, 'btPollOverlay', 30)
+				logging.debug(f"Poll Wait check 1...")
 				sleep(3)
 				self.browser.utils.waitUntilClickable(By.ID, 'btoption0', timeToWait=20)
+				logging.debug(f"Poll Wait check 2...")
 				take_screenshot(self.webdriver, "Poll_Quiz")
 				choices = ['btoption0', 'btoption1']
 				option = self.webdriver.find_element(By.ID, choice(choices))
