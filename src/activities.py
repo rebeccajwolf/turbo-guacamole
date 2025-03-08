@@ -170,6 +170,7 @@ class Activities:
 		except Exception as e:
 			take_screenshot(self.webdriver, "Quiz_Error")
 			logging.warning(f'Error occured while doing Quiz: {e}')
+			raise
 
 	def completeABC(self):
 		# Simulate completing an ABC activity
