@@ -231,13 +231,14 @@ class Activities:
 			# self.browser.utils.waitUntilVisible(By.ID, "modern-flyout", timeToWait=30)
 			searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q", timeToWait=30)
 			self.browser.utils.click(searchbar)
-			sleep(1)
+			sleep(2)
 			searchbar.clear()
-			sleep(1)
+			sleep(2)
 			for char in query:
 				searchbar.send_keys(char)
 				sleep(uniform(0.2, 0.45))
 			sleep(3)
+			take_screenshot(self.webdriver, "searchOnBing_BeforeSubmit")
 			searchbar.submit()
 			sleep(2)
 
