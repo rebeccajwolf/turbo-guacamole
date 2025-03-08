@@ -39,9 +39,13 @@ class Activities:
 			try:
 				cardId += 1
 				# Open the More Promotions activity for the given cardId
+				# element = self.webdriver.find_element(
+				# 	By.CSS_SELECTOR,
+				# 	f"#more-activities > .m-card-group > .ng-scope:nth-child({cardId}) #ma-card-link .pointLink",
+				# )
 				element = self.webdriver.find_element(
 					By.CSS_SELECTOR,
-					f"#more-activities > .m-card-group > .ng-scope:nth-child({cardId}) #ma-card-link .pointLink",
+					f"#more-activities > .m-card-group > .ng-scope:nth-child({cardId}) .ds-card-sec",
 				)
 				# Scroll element into view
 				self.webdriver.execute_script("arguments[0].scrollIntoView(true);", element)
