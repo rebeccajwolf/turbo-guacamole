@@ -34,7 +34,7 @@ class Activities:
 		sleep(5)  # Add small delay to ensure click is registered
 		# self.browser.utils.switchToNewTab()
 
-	def openMorePromotionsActivity(self, cardId: int):
+	def openMorePromotionsActivity(self, offerId: str):
 		while True:
 			try:
 				cardId += 1
@@ -43,9 +43,13 @@ class Activities:
 				# 	By.CSS_SELECTOR,
 				# 	f"#more-activities > .m-card-group > .ng-scope:nth-child({cardId}) #ma-card-link .pointLink",
 				# )
+				# element = self.webdriver.find_element(
+				# 	By.CSS_SELECTOR,
+				# 	f"#more-activities > .m-card-group > .ng-scope:nth-child({cardId}) .ds-card-sec",
+				# )
 				element = self.webdriver.find_element(
 					By.CSS_SELECTOR,
-					f"#more-activities > .m-card-group > .ng-scope:nth-child({cardId}) .ds-card-sec",
+					f"[data-bi-id^=\"{offerId}\"] .pointLink:not(.contentContainer .pointLink)",
 				)
 				# Scroll element into view
 				self.webdriver.execute_script("arguments[0].scrollIntoView(true);", element)
@@ -291,6 +295,10 @@ class Activities:
 					
 				# Open the activity for the activity
 				cardId = activities.index(activity)
+				if "membercenter" in activity["name"].lower() or "exploreonbing" in activity["name"].lower():
+					offerId = activity["name"]
+				else:
+					offerId = activity["offerId"]
 				isDailySet = (
 					"daily_set_date" in activity["attributes"]
 					and activity["attributes"]["daily_set_date"]
@@ -300,7 +308,7 @@ class Activities:
 				if isDailySet:
 					self.openDailySetActivity(cardId)
 				else:
-					self.openMorePromotionsActivity(cardId)
+					self.openMorePromotionsActivity(offerId)
 
 
 				sleep(7)
