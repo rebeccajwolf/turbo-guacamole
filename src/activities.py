@@ -70,6 +70,7 @@ class Activities:
 				option = self.webdriver.find_element(By.ID, choice(choices))
 				sleep(3)
 				self.browser.utils.mouseClick(option)
+				logging.debug(f"Poll Quiz Clicked...")
 				sleep(4)
 				if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
 					res = False

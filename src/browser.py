@@ -19,6 +19,7 @@ from ipapi.exceptions import RateLimited
 from selenium.webdriver import ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.webdriver import WebDriver
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException, InvalidSessionIdException
 
 from src import RemainingSearches
 from src.userAgentGenerator import GenerateUserAgent
@@ -189,7 +190,8 @@ class Browser:
 								# Switch back to main window and close it
 								self.webdriver.switch_to.window(current_handle)
 								self.webdriver.close()
-								
+						except (InvalidSessionIdException):
+							pass
 						except Exception as e:
 								logging.error(f"Error during browser cleanup: {str(e)}")
 						finally:
