@@ -66,16 +66,13 @@ class Activities:
 					res = False
 				logging.debug(f"Poll Quiz Doing...")
 				# self.browser.waitUntilVisible(By.ID, 'btPollOverlay', 30)
-				logging.debug(f"Poll Wait check 1...")
 				sleep(3)
 				self.browser.utils.waitUntilClickable(By.ID, 'btoption0', timeToWait=20)
-				logging.debug(f"Poll Wait check 2...")
 				take_screenshot(self.webdriver, "Poll_Quiz")
 				choices = ['btoption0', 'btoption1']
 				option = self.webdriver.find_element(By.ID, choice(choices))
 				sleep(3)
 				self.browser.utils.mouseClick(option)
-				logging.debug(f"Poll Quiz Clicked...")
 				sleep(4)
 			except:
 				pass
@@ -337,19 +334,19 @@ class Activities:
 		self.browser.utils.resetTabs()
 
 	def completeActivities(self):
-		logging.info("[DAILY SET] " + "Trying to complete the Daily Set...")
-		dailySetPromotions = self.browser.utils.getDailySetPromotions()
-		self.browser.utils.goToRewards()
-		for activity in dailySetPromotions:
-			self.doActivity(activity, dailySetPromotions)
-		logging.info("[DAILY SET] Done")
-
-		# logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
-		# morePromotions: list[dict] = self.browser.utils.getMorePromotions()
+		# logging.info("[DAILY SET] " + "Trying to complete the Daily Set...")
+		# dailySetPromotions = self.browser.utils.getDailySetPromotions()
 		# self.browser.utils.goToRewards()
-		# for activity in morePromotions:
-		# 	self.doActivity(activity, morePromotions)
-		# logging.info("[MORE PROMOS] Done")
+		# for activity in dailySetPromotions:
+		# 	self.doActivity(activity, dailySetPromotions)
+		# logging.info("[DAILY SET] Done")
+
+		logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
+		morePromotions: list[dict] = self.browser.utils.getMorePromotions()
+		self.browser.utils.goToRewards()
+		for activity in morePromotions:
+			self.doActivity(activity, morePromotions)
+		logging.info("[MORE PROMOS] Done")
 
 		# todo Send one email for all accounts?
 		# fixme This is falsely considering some activities incomplete when complete
