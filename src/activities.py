@@ -76,8 +76,6 @@ class Activities:
 		# click poll option
 		while res:
 			try:
-				if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
-					res = False
 				logging.debug(f"Poll Quiz Doing...")
 				# self.browser.waitUntilVisible(By.ID, 'btPollOverlay', 30)
 				sleep(3)
@@ -87,6 +85,8 @@ class Activities:
 				sleep(3)
 				self.browser.utils.mouseClick(option)
 				sleep(4)
+				if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
+					res = False
 			except:
 				pass
 
