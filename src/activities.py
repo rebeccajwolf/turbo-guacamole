@@ -6,6 +6,12 @@ from time import sleep
 from selenium.common import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.common.exceptions import (
+	ElementClickInterceptedException,
+	ElementNotInteractableException,
+	NoSuchElementException,
+	StaleElementReferenceException,
+)
 
 from src.browser import Browser
 from src.constants import REWARDS_URL
