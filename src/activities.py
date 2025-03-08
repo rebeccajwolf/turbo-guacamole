@@ -342,6 +342,7 @@ class Activities:
 			# sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
 			logging.debug(f"Finished Sleep after Activity")
 			self.browser.utils.resetTabs()
+			break
 
 	def completeActivities(self):
 		# logging.info("[DAILY SET] " + "Trying to complete the Daily Set...")
