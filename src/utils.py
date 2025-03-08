@@ -35,6 +35,7 @@ from selenium.common import (
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 from urllib3 import Retry
@@ -780,6 +781,17 @@ class Utils:
 				expected_conditions.element_to_be_clickable(element)
 			)
 			element.click()
+
+	def mouseClick(self, element: WebElement) -> None:
+		try:
+			action = ActionChains(self.webdriver)
+			action.move_to_element(element).pause(0.5).click().perform()
+		except (ElementClickInterceptedException, ElementNotInteractableException):
+			self.tryDismissAllMessages()
+			WebDriverWait(self.webdriver, 10).until(
+				expected_conditions.element_to_be_clickable(element)
+			)
+			action.move_to_element(element).pause(0.5).click().perform()
 
 def take_screenshot(webdriver: WebDriver, name: str = None) -> str:
 		"""

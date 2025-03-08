@@ -39,7 +39,7 @@ class Activities:
 		self.webdriver.execute_script("arguments[0].scrollIntoView(true);", element)
 		sleep(3)  # Wait for scroll
 		take_screenshot(self.webdriver, f"Before_Clicking_cardID{cardId}")
-		self.browser.utils.click(element)
+		self.browser.utils.mouseClick(element)
 		sleep(5)  # Add small delay to ensure click is registered
 		# self.browser.utils.switchToNewTab()
 
@@ -230,7 +230,8 @@ class Activities:
 		try:
 			# self.browser.utils.waitUntilVisible(By.ID, "modern-flyout", timeToWait=30)
 			searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q", timeToWait=30)
-			self.browser.utils.jsClick(searchbar)
+			self.browser.utils.mouseClick(searchbar)
+			take_screenshot(self.webdriver, f"searchOnBing_AfterClick_{query}")
 			sleep(2)
 			searchbar.clear()
 			sleep(2)
@@ -238,7 +239,7 @@ class Activities:
 				searchbar.send_keys(char)
 				sleep(uniform(0.2, 0.45))
 			sleep(3)
-			take_screenshot(self.webdriver, f"searchOnBing_BeforeSubmit{query}")
+			take_screenshot(self.webdriver, f"searchOnBing_BeforeSubmit_{query}")
 			searchbar.submit()
 			sleep(2)
 
