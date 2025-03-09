@@ -349,6 +349,8 @@ class Browser:
 				options.add_argument("--disable-features=PrivacySandboxSettings4")
 				options.add_argument("--disable-http2")
 				options.add_argument("--disable-search-engine-choice-screen")
+				options.add_argument("--disable-setuid-sandbox")
+				options.add_argument("--disable-software-rasterizer")
 				# options.add_argument("--disable-component-update")
 				
 				# Wayland specific options
