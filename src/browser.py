@@ -333,9 +333,9 @@ class Browser:
 				options.headless = self.headless
 				options.add_argument(f"--lang={self.localeLang}")
 				options.add_argument("--log-level=3")
-				options.add_argument(
-						"--blink-settings=imagesEnabled=false"
-				)
+				# options.add_argument(
+				# 		"--blink-settings=imagesEnabled=false"
+				# )
 				options.add_argument("--ignore-certificate-errors")
 				options.add_argument("--ignore-certificate-errors-spki-list")
 				options.add_argument("--ignore-ssl-errors")
@@ -349,36 +349,34 @@ class Browser:
 				options.add_argument("--disable-features=PrivacySandboxSettings4")
 				options.add_argument("--disable-http2")
 				options.add_argument("--disable-search-engine-choice-screen")
-				options.add_argument("--disable-component-update")
+				# options.add_argument("--disable-component-update")
 				
 				# Wayland specific options
 				options.add_argument("--ozone-platform=wayland")
 				options.add_argument("--enable-features=UseOzonePlatform")
 				
 				# Enhanced privacy and security options
-				options.add_argument("--disable-web-security")
-				options.add_argument("--disable-blink-features=AutomationControlled")
-				options.add_argument("--disable-features=IsolateOrigins,site-per-process,AutomationControlled")
-				options.add_argument("--disable-blink-features")
+				# options.add_argument("--disable-web-security")
+				# options.add_argument("--disable-blink-features=AutomationControlled")
+				# options.add_argument("--disable-features=IsolateOrigins,site-per-process,AutomationControlled")
+				# options.add_argument("--disable-blink-features")
 
 				# Performance and stability options
-				options.add_argument("--disable-dev-tools")
-				options.add_argument("--disable-background-networking")
-				options.add_argument("--disable-background-timer-throttling")
-				options.add_argument("--disable-backgrounding-occluded-windows")
-				options.add_argument("--disable-breakpad")
-				options.add_argument("--disable-component-extensions-with-background-pages")
-				options.add_argument("--disable-features=TranslateUI")
-				options.add_argument("--disable-ipc-flooding-protection")
-				options.add_argument("--disable-renderer-backgrounding")
-				options.add_argument("--force-color-profile=srgb")
-				options.add_argument("--metrics-recording-only")
-				options.add_argument("--no-first-run")
+				# options.add_argument("--disable-dev-tools")
+				# options.add_argument("--disable-background-networking")
+				# options.add_argument("--disable-background-timer-throttling")
+				# options.add_argument("--disable-backgrounding-occluded-windows")
+				# options.add_argument("--disable-features=TranslateUI")
+				# options.add_argument("--disable-ipc-flooding-protection")
+				# options.add_argument("--disable-renderer-backgrounding")
+				# options.add_argument("--force-color-profile=srgb")
+				# options.add_argument("--metrics-recording-only")
+				# options.add_argument("--no-first-run")
 
 				# Microsoft-specific options
-				options.add_argument("--disable-prompt-on-repost")
-				options.add_argument("--disable-domain-reliability")
-				options.add_argument("--disable-client-side-phishing-detection")
+				# options.add_argument("--disable-prompt-on-repost")
+				# options.add_argument("--disable-domain-reliability")
+				# options.add_argument("--disable-client-side-phishing-detection")
 				options.page_load_strategy = "eager"
 
 				seleniumwireOptions: dict[str, Any] = {
