@@ -52,7 +52,7 @@ activities:
     "Learn song lyrics": carry on wayward son lyrics
     "Lights, camera, action!": the raiders of the lost ark movie
 logging:
-  level: DEBUG # Set to DEBUG, WARNING, ERROR or CRITICAL to change the level of displayed information in the terminal
+  level: INFO # Set to DEBUG, WARNING, ERROR or CRITICAL to change the level of displayed information in the terminal
     # See https://docs.python.org/3/library/logging.html#logging-levels. Can be overridden with command-line arguments.
 retries:
   base_delay_in_seconds: 230 # The base wait time between each retries. Multiplied by two each try.
