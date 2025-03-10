@@ -199,54 +199,60 @@ class Searches:
 
 				# todo If first 3 searches of day, don't retry since points register differently, will be a bit quicker
 				for i in range(self.maxRetries + 1):
-						if i != 0:
-								sleepTime: float
-								if Searches.retriesStrategy == Searches.retriesStrategy.EXPONENTIAL:
-										sleepTime = baseDelay * 2 ** (i - 1)
-								elif Searches.retriesStrategy == Searches.retriesStrategy.CONSTANT:
-										sleepTime = baseDelay
-								else:
-										raise AssertionError
-								sleepTime += baseDelay * random()  # Add jitter
-								logging.debug(
-										f"[BING] Search attempt not counted {i}/{Searches.maxRetries}, sleeping {sleepTime}"
-										f" seconds..."
-								)
-								sleep(sleepTime)
+					for _ in range(3):
+						try:
+							if i != 0:
+									sleepTime: float
+									if Searches.retriesStrategy == Searches.retriesStrategy.EXPONENTIAL:
+											sleepTime = baseDelay * 2 ** (i - 1)
+									elif Searches.retriesStrategy == Searches.retriesStrategy.CONSTANT:
+											sleepTime = baseDelay
+									else:
+											raise AssertionError
+									sleepTime += baseDelay * random()  # Add jitter
+									logging.debug(
+											f"[BING] Search attempt not counted {i}/{Searches.maxRetries}, sleeping {sleepTime}"
+											f" seconds..."
+									)
+									sleep(sleepTime)
 
-						searchbar = self.browser.utils.waitUntilClickable(
-								By.ID, "sb_form_q", timeToWait=40
-						)
-						searchbar.click()
-						sleep(2)
-						searchbar.clear()
-						sleep(2)
-						term = next(termsCycle)
-						logging.debug(f"term={term}")
-						sleep(1)
-						for char in term:
-							searchbar.send_keys(char)
-							sleep(uniform(0.2, 0.45))
-						sleep(1)
-						searchbar.submit()
+							searchbar = self.browser.utils.waitUntilClickable(
+									By.ID, "sb_form_q", timeToWait=40
+							)
+							searchbar.click()
+							sleep(2)
+							searchbar.clear()
+							sleep(2)
+							term = next(termsCycle)
+							logging.debug(f"term={term}")
+							sleep(1)
+							for char in term:
+								searchbar.send_keys(char)
+								sleep(uniform(0.2, 0.45))
+							sleep(1)
+							searchbar.submit()
 
-						# Random scroll after search
-						sleep(uniform(2, 3))
-						self.random_scroll()
+							# Random scroll after search
+							sleep(uniform(2, 3))
+							self.random_scroll()
 
-						# Random chance to click a result
-						if random() < 0.5:  # 50% chance
-								self.click_random_result()
+							# Random chance to click a result
+							if random() < 0.5:  # 50% chance
+									self.click_random_result()
 
-						pointsAfter = self.browser.utils.getAccountPoints()
-						if pointsBefore < pointsAfter:
-								sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
-								return
+							pointsAfter = self.browser.utils.getAccountPoints()
+							if pointsBefore < pointsAfter:
+									sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+									return
 
-						# todo
-						# if i == (maxRetries / 2):
-						#     logging.info("[BING] " + "TIMED OUT GETTING NEW PROXY")
-						#     self.webdriver.proxy = self.browser.giveMeProxy()
+							# todo
+							# if i == (maxRetries / 2):
+							#     logging.info("[BING] " + "TIMED OUT GETTING NEW PROXY")
+							#     self.webdriver.proxy = self.browser.giveMeProxy()
+							break
+						except TimeoutException:
+							self.webdriver.refresh()
+							continue
 				logging.error("[BING] Reached max search attempt retries")
 
 
