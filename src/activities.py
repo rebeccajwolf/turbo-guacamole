@@ -362,7 +362,7 @@ class Activities:
 				self.browser.utils.resetTabs()
 				continue
 			logging.debug(f"Entering Sleep after Activity")
-			sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+			# sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
 			logging.debug(f"Finished Sleep after Activity")
 			self.browser.utils.resetTabs()
 			break
