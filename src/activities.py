@@ -87,8 +87,12 @@ class Activities:
 				sleep(4)
 				if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
 					res = False
+				self.webdriver.refresh()
+				sleep(3)
 			except:
-				pass
+				self.webdriver.refresh()
+				sleep(3)
+				continue
 
 
 	def waitUntilQuizLoads(self):
