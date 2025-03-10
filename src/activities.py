@@ -80,13 +80,14 @@ class Activities:
 					logging.debug(f"Poll Quiz Doing...")
 					# self.browser.waitUntilVisible(By.ID, 'btPollOverlay', 30)
 					sleep(3)
-					# self.browser.utils.waitUntilClickable(By.ID, 'btoption0', timeToWait=20)
-					choices = ['btoption0', 'btoption1']
-					option = self.webdriver.find_element(By.ID, choice(choices))
+					self.browser.utils.waitUntilClickable(By.XPATH, '//*[@id="btoption0"]', timeToWait=30)
+					option = self.webdriver.find_element(By.XPATH, f"//*[@id=\"btoption{randint(0,1)}\"]")
 					sleep(3)
-					self.browser.utils.click(option)
+					self.browser.utils.mouseClick(option)
+					logging.debug(f"Clicked Poll Quiz...")
 					sleep(4)
 					if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
+						logging.debug(f"Exiting Poll Quiz...")
 						res = False
 					sleep(3)
 			except:
@@ -287,7 +288,7 @@ class Activities:
 			try:
 				activityTitle = cleanupActivityTitle(activity["title"])
 				logging.debug(f"activityTitle={activityTitle}")
-				if activity["complete"] is True or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
+				if activity["complete"] is None or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
 					logging.debug("Already done, returning")
 					return
 				if "is_unlocked" in activity["attributes"] and activity["attributes"]["is_unlocked"] == "False":
@@ -371,12 +372,12 @@ class Activities:
 			self.doActivity(activity, dailySetPromotions)
 		logging.info("[DAILY SET] Done")
 
-		logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
-		morePromotions: list[dict] = self.browser.utils.getMorePromotions()
-		self.browser.utils.goToRewards()
-		for activity in morePromotions:
-			self.doActivity(activity, morePromotions)
-		logging.info("[MORE PROMOS] Done")
+		# logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
+		# morePromotions: list[dict] = self.browser.utils.getMorePromotions()
+		# self.browser.utils.goToRewards()
+		# for activity in morePromotions:
+		# 	self.doActivity(activity, morePromotions)
+		# logging.info("[MORE PROMOS] Done")
 
 		# todo Send one email for all accounts?
 		# fixme This is falsely considering some activities incomplete when complete
