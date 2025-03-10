@@ -87,7 +87,6 @@ class Activities:
 				sleep(4)
 				if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
 					res = False
-				self.webdriver.refresh()
 				sleep(3)
 			except:
 				self.webdriver.refresh()
