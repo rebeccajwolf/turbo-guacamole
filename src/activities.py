@@ -257,7 +257,7 @@ class Activities:
 			# self.browser.utils.waitUntilVisible(By.ID, "modern-flyout", timeToWait=30)
 			searchbar = self.browser.utils.waitUntilClickable(By.ID, "sb_form_q", timeToWait=30)
 			self.browser.utils.mouseClick(searchbar)
-			take_screenshot(self.webdriver, f"searchOnBing_AfterClick_{query}")
+			# take_screenshot(self.webdriver, f"searchOnBing_AfterClick_{query}")
 			sleep(2)
 			searchbar.clear()
 			sleep(2)
@@ -265,7 +265,7 @@ class Activities:
 				searchbar.send_keys(char)
 				sleep(uniform(0.2, 0.45))
 			sleep(3)
-			take_screenshot(self.webdriver, f"searchOnBing_BeforeSubmit_{query}")
+			# take_screenshot(self.webdriver, f"searchOnBing_BeforeSubmit_{query}")
 			searchbar.submit()
 			sleep(2)
 
@@ -273,9 +273,9 @@ class Activities:
 				completeDictionarySearch()
 			elif "tracking" in query:
 				completeTrackingSeach()
-			take_screenshot(self.webdriver, "searchOnBing_Complete")
+			# take_screenshot(self.webdriver, "searchOnBing_Complete")
 		except Exception as e:
-			take_screenshot(self.webdriver, "searchOnBing_error")
+			# take_screenshot(self.webdriver, "searchOnBing_error")
 			logging.warning(f"Error Occured while Doing Activity: {e}")
 			raise
 
