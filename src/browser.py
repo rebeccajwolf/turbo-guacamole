@@ -351,6 +351,7 @@ class Browser:
 				options.add_argument("--disable-search-engine-choice-screen")
 				options.add_argument("--disable-setuid-sandbox")
 				options.add_argument("--disable-software-rasterizer")
+				options.add_argument("--disable-site-isolation-trials")
 				# options.add_argument("--disable-component-update")
 				
 				# Wayland specific options
@@ -358,16 +359,16 @@ class Browser:
 				options.add_argument("--enable-features=UseOzonePlatform")
 				
 				# Enhanced privacy and security options
-				# options.add_argument("--disable-web-security")
+				options.add_argument("--disable-web-security")
 				# options.add_argument("--disable-blink-features=AutomationControlled")
 				# options.add_argument("--disable-features=IsolateOrigins,site-per-process,AutomationControlled")
 				# options.add_argument("--disable-blink-features")
 
 				# Performance and stability options
 				# options.add_argument("--disable-dev-tools")
-				# options.add_argument("--disable-background-networking")
-				# options.add_argument("--disable-background-timer-throttling")
-				# options.add_argument("--disable-backgrounding-occluded-windows")
+				options.add_argument("--disable-background-networking")
+				options.add_argument("--disable-background-timer-throttling")
+				options.add_argument("--disable-backgrounding-occluded-windows")
 				# options.add_argument("--disable-features=TranslateUI")
 				# options.add_argument("--disable-ipc-flooding-protection")
 				# options.add_argument("--disable-renderer-backgrounding")
