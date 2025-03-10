@@ -30,11 +30,15 @@ from src.browser import RemainingSearches
 from src.loggingColoredFormatter import ColoredFormatter
 from src.utils import CONFIG, sendNotification, getProjectRoot, formatNumber
 from src.exceptions import *
+from src.completion_status import CompletionStatus
 
 
 
 def main():
 	# setupLogging()
+	# Initialize completion status tracker
+	completion_status = CompletionStatus()
+	completion_status.clear_old_status()  # Clean up old status entries
 
 	# Load previous day's points data
 	previous_points_data = load_previous_points_data()
@@ -44,7 +48,7 @@ def main():
 		retry_count = 0
 		while retry_count < max_retries:
 			try:
-				earned_points = executeBot(currentAccount)
+				earned_points = executeBot(currentAccount, completion_status)
 				previous_points = previous_points_data.get(currentAccount.email, 0)
 
 				# Calculate the difference in points from the prior day
@@ -202,7 +206,7 @@ class AppriseSummary(Enum):
 	"""
 
 
-def executeBot(currentAccount):
+def executeBot(currentAccount, completion_status: CompletionStatus):
 	logging.info(f"********************{currentAccount.email}********************")
 
 	startingPoints: int | None = None
@@ -221,12 +225,29 @@ def executeBot(currentAccount):
 				logging.info(
 					f"[POINTS] You have {formatNumber(startingPoints)} points on your account"
 				)
-				Activities(desktopBrowser).completeActivities()
-				PunchCards(desktopBrowser).completePunchCards()
+				# Only complete daily set if not already done
+				if not completion_status.is_completed(currentAccount.email, "promotions"):
+					Activities(desktopBrowser).completeActivities()
+					completion_status.mark_completed(currentAccount.email, "promotions")
+				else:
+						logging.info("[Promotions] Skipping as it was already completed")
+
+				# Only complete punch cards if not already done
+				if not completion_status.is_completed(currentAccount.email, "punch_cards"):
+					PunchCards(desktopBrowser).completePunchCards()
+					completion_status.mark_completed(currentAccount.email, "punch_cards")
+				else:
+					logging.info("[PUNCH CARDS] Skipping as it was already completed")
 				# VersusGame(desktopBrowser).completeVersusGame()
 
-				with Searches(desktopBrowser) as searches:
-					searches.bingSearches()
+
+				if not completion_status.is_completed(currentAccount.email, "desktop_searches"):
+					with Searches(desktopBrowser) as searches:
+						searches.bingSearches()
+					completion_status.mark_completed(currentAccount.email, "desktop_searches")
+				elif completion_status.is_completed(currentAccount.email, "desktop_searches"):
+					logging.info("[BING] Skipping desktop searches as they were already completed")
+
 
 				goalPoints = utils.getGoalPoints()
 				goalTitle = utils.getGoalTitle()
@@ -237,14 +258,18 @@ def executeBot(currentAccount):
 				accountPoints = utils.getAccountPoints()
 
 		if CONFIG.search.type in ("mobile", "both", None):
-			with Browser(mobile=True, account=currentAccount) as mobileBrowser:
-				utils = mobileBrowser.utils
-				Login(mobileBrowser).login()
-				if startingPoints is None:
-					startingPoints = utils.getAccountPoints()
-				ReadToEarn(mobileBrowser).completeReadToEarn()
-				with Searches(mobileBrowser) as searches:
-					searches.bingSearches()
+			if not completion_status.is_completed(currentAccount.email, "mobile_searches"):
+				with Browser(mobile=True, account=currentAccount) as mobileBrowser:
+					utils = mobileBrowser.utils
+					Login(mobileBrowser).login()
+					if startingPoints is None:
+						startingPoints = utils.getAccountPoints()
+					ReadToEarn(mobileBrowser).completeReadToEarn()
+					with Searches(mobileBrowser) as searches:
+						searches.bingSearches()
+				completion_status.mark_completed(currentAccount.email, "mobile_searches")
+			elif completion_status.is_completed(currentAccount.email, "mobile_searches"):
+				logging.info("[BING] Skipping mobile searches as they were already completed")
 
 				goalPoints = utils.getGoalPoints()
 				goalTitle = utils.getGoalTitle()
