@@ -28,6 +28,7 @@ from requests.adapters import HTTPAdapter
 from selenium.common import (
 	ElementClickInterceptedException,
 	ElementNotInteractableException,
+	ElementNotVisibleException,
 	NoSuchElementException,
 	TimeoutException,
 	StaleElementReferenceException
@@ -786,12 +787,12 @@ class Utils:
 		try:
 			action = ActionChains(self.webdriver)
 			action.move_to_element(element).pause(0.5).click().perform()
-		except (ElementClickInterceptedException, ElementNotInteractableException):
+		except (ElementNotVisibleException, ElementClickInterceptedException, ElementNotInteractableException):
 			self.tryDismissAllMessages()
 			WebDriverWait(self.webdriver, 10).until(
 				expected_conditions.element_to_be_clickable(element)
 			)
-			action.move_to_element(element).pause(0.5).click().perform()
+			jsClick(element)
 
 def take_screenshot(webdriver: WebDriver, name: str = None) -> str:
 		"""

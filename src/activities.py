@@ -86,11 +86,14 @@ class Activities:
 					self.browser.utils.mouseClick(option)
 					logging.debug(f"Clicked Poll Quiz...")
 					sleep(4)
-					if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
-						logging.debug(f"Exiting Poll Quiz...")
+					if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]') or self.browser.utils.isElementExists(By.XPATH, '//*[@class="cico bt_pocheckmark"]'):
+						logging.debug(f"Finished Poll Quiz...")
 						res = False
 					sleep(3)
 			except:
+				if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]') or self.browser.utils.isElementExists(By.XPATH, '//*[@class="cico bt_pocheckmark"]'):
+						logging.debug(f"Finished Poll Quiz...")
+						res = False
 				self.webdriver.refresh()
 				sleep(3)
 				continue
