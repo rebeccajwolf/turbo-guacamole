@@ -291,7 +291,7 @@ class Activities:
 			try:
 				activityTitle = cleanupActivityTitle(activity["title"])
 				logging.debug(f"activityTitle={activityTitle}")
-				if activity["complete"] is None or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
+				if activity["complete"] is True or activity["pointProgressMax"] == 0 or activity["exclusiveLockedFeatureStatus"] == "locked":
 					logging.debug("Already done, returning")
 					return
 				if "is_unlocked" in activity["attributes"] and activity["attributes"]["is_unlocked"] == "False":
@@ -362,7 +362,7 @@ class Activities:
 				self.browser.utils.resetTabs()
 				continue
 			logging.debug(f"Entering Sleep after Activity")
-			# sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+			sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
 			logging.debug(f"Finished Sleep after Activity")
 			self.browser.utils.resetTabs()
 			break
@@ -375,12 +375,12 @@ class Activities:
 			self.doActivity(activity, dailySetPromotions)
 		logging.info("[DAILY SET] Done")
 
-		# logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
-		# morePromotions: list[dict] = self.browser.utils.getMorePromotions()
-		# self.browser.utils.goToRewards()
-		# for activity in morePromotions:
-		# 	self.doActivity(activity, morePromotions)
-		# logging.info("[MORE PROMOS] Done")
+		logging.info("[MORE PROMOS] " + "Trying to complete More Promotions...")
+		morePromotions: list[dict] = self.browser.utils.getMorePromotions()
+		self.browser.utils.goToRewards()
+		for activity in morePromotions:
+			self.doActivity(activity, morePromotions)
+		logging.info("[MORE PROMOS] Done")
 
 		# todo Send one email for all accounts?
 		# fixme This is falsely considering some activities incomplete when complete
