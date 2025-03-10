@@ -83,7 +83,7 @@ class Activities:
 				choices = ['btoption0', 'btoption1']
 				option = self.webdriver.find_element(By.ID, choice(choices))
 				sleep(3)
-				self.browser.utils.mouseClick(option)
+				self.browser.utils.click(option)
 				sleep(4)
 				if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]'):
 					res = False
