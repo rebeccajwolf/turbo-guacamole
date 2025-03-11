@@ -500,36 +500,6 @@ def retry_on_500_errors(function):
 	return wrapper
 
 
-
-def split_message(message: str, max_length: int = 1900) -> List[str]:
-	"""Split a message into parts that fit within Discord's character limit"""
-	if len(message) <= max_length:
-		return [message]
-	
-	parts = []
-	current_part = ""
-	lines = message.split('\n')
-	
-	for line in lines:
-		if len(current_part) + len(line) + 1 <= max_length:
-			current_part += line + '\n'
-		else:
-			if current_part:
-				parts.append(current_part.rstrip())
-			current_part = line + '\n'
-	
-	if current_part:
-		parts.append(current_part.rstrip())
-	
-	# Add part numbers
-	total_parts = len(parts)
-	if total_parts > 1:
-		for i in range(total_parts):
-			parts[i] = f"[Part {i+1}/{total_parts}]\n{parts[i]}"
-	
-	return parts
-
-
 class Utils:
 
 	def __init__(self, webdriver: WebDriver):
@@ -1115,6 +1085,58 @@ def loadConfig(
 	return config
 
 
+def split_message(message: str, max_length: int = 1900) -> List[str]:
+	"""Split a message into parts that fit within Discord's character limit while preserving code blocks"""
+	if len(message) <= max_length:
+		return [message]
+	
+	parts = []
+	current_part = ""
+	in_code_block = False
+	code_block_lang = ""
+	lines = message.split('\n')
+	
+	for line in lines:
+		# Check for code block markers
+		if line.startswith('```'):
+			if not in_code_block:
+				in_code_block = True
+				code_block_lang = line[3:] if len(line) > 3 else ""
+			else:
+				in_code_block = False
+		
+		# Check if adding this line would exceed the limit
+		new_part = current_part + line + '\n'
+		if len(new_part) <= max_length:
+			current_part = new_part
+		else:
+			# If we're in a code block, close it and start a new one in next part
+			if in_code_block:
+				current_part += "```\n"  # Close current code block
+				parts.append(current_part.rstrip())
+				current_part = f"```{code_block_lang}\n{line}\n"  # Start new code block
+			else:
+				parts.append(current_part.rstrip())
+				current_part = line + '\n'
+	
+	# Add the last part
+	if current_part:
+		parts.append(current_part.rstrip())
+	
+	# Add part numbers and ensure all code blocks are closed
+	total_parts = len(parts)
+	if total_parts > 1:
+		for i in range(total_parts):
+			part = parts[i]
+			# Count code block starts and ends
+			starts = part.count("```") - part.count("```\n")
+			if starts > 0:  # Unclosed code block
+				part += "\n```"
+			parts[i] = f"[Part {i+1}/{total_parts}]\n{part}"
+	
+	return parts
+
+
 def sendNotification(title: str, body: str, e: Exception = None) -> None:
 	try:
 		if not CONFIG.apprise.enabled or (
@@ -1126,17 +1148,36 @@ def sendNotification(title: str, body: str, e: Exception = None) -> None:
 		if not urls:
 			logging.debug("No urls found, not sending notification")
 			return
-		# Format the message for Discord
-		formatted_body = body
+
+		# Check if any Discord URLs are present
 		has_discord = any(url.startswith("discord://") for url in urls)
 		
+		# Format the message for Discord
+		formatted_body = body
 		if has_discord:
-			# Escape Discord markdown characters
+			# Clean and escape the message for Discord formatting
+			formatted_body = formatted_body.replace("```", "'''")  # Temporarily replace code blocks
 			formatted_body = formatted_body.replace("_", "\\_").replace("*", "\\*").replace("`", "\\`")
 			
-			# Add code block formatting for error messages if there's an exception
+			# Handle exception formatting
 			if e is not None:
-				formatted_body = f"```\n{formatted_body}\n```"
+				# Extract traceback if available
+				if hasattr(e, '__traceback__'):
+					import traceback
+					tb_str = ''.join(traceback.format_tb(e.__traceback__))
+					error_msg = f"Error: {str(e)}\n\nTraceback:\n{tb_str}"
+				else:
+					error_msg = str(e)
+				
+				# Clean up the error message
+				error_msg = error_msg.replace("```", "'''")  # Remove nested code blocks
+				error_msg = error_msg.replace("\t", "    ")  # Replace tabs with spaces
+				
+				# Add code block formatting
+				formatted_body = f"{formatted_body}\n```python\n{error_msg}\n```"
+			
+			# Restore any legitimate code blocks
+			formatted_body = formatted_body.replace("'''", "```")
 
 		# Add all configured notification URLs
 		for url in urls:

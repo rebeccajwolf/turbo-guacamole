@@ -75,9 +75,9 @@ def main():
 						f"Error executing account {currentAccount.email} (attempt {retry_count}/{max_retries}): {str(e1)}"
 					)
 					# Add exponential backoff
-					wait_time = 2 ** retry_count
-					logging.info(f"Waiting {wait_time} seconds before retry...")
-					time.sleep(wait_time)
+					# wait_time = 2 ** retry_count
+					# logging.info(f"Waiting {wait_time} seconds before retry...")
+					# time.sleep(wait_time)
 				else:
 					logging.error(
 						f"Failed to execute account {currentAccount.email} after {max_retries} attempts. Moving to next account."

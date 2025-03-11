@@ -227,8 +227,8 @@ class Browser:
 										self.kill_existing_chrome_processes()
 										
 										# Clean up the user data directory
-										if hasattr(self, 'userDataDir') and self.userDataDir.exists():
-												shutil.rmtree(self.userDataDir, ignore_errors=True)
+										# if hasattr(self, 'userDataDir') and self.userDataDir.exists():
+										# 		shutil.rmtree(self.userDataDir, ignore_errors=True)
 										
 										# Reset Weston before starting new browser session
 										self.reset_weston()
