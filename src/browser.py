@@ -11,6 +11,7 @@ import subprocess
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Type
+from datetime import datetime, timedelta
 
 import ipapi
 import seleniumwire.undetected_chromedriver as webdriver
@@ -152,24 +153,47 @@ class Browser:
 						logging.warning(f"Error cleaning up chrome processes: {e}")
 
 		def setupProfiles(self) -> Path:
-				"""Sets up the sessions profile for the chrome browser."""
+				"""Sets up the sessions profile for the chrome browser with 24-hour retention."""
 				sessionsDir = getProjectRoot() / "sessions"
 				
-				# Clean up old session directories
-				if sessionsDir.exists():
-						try:
-								shutil.rmtree(sessionsDir)
-								time.sleep(1)
-						except Exception as e:
-								logging.error(f"Error cleaning sessions directory: {str(e)}")
-
-				# Create fresh sessions directory
+				# Create sessions directory if it doesn't exist
 				sessionsDir.mkdir(parents=True, exist_ok=True)
 
-				# Create unique session ID using username and timestamp
+				# Clean up profiles older than 24 hours
+				current_time = datetime.now()
+				if sessionsDir.exists():
+						for profile_dir in sessionsDir.iterdir():
+								if profile_dir.is_dir():
+										try:
+												# Extract timestamp from directory name
+												dir_parts = profile_dir.name.split('_')
+												if len(dir_parts) >= 2:
+														timestamp = float(dir_parts[-1])
+														profile_time = datetime.fromtimestamp(timestamp)
+														
+														# Check if profile is older than 24 hours
+														if current_time - profile_time > timedelta(hours=24):
+																shutil.rmtree(profile_dir)
+																logging.info(f"Removed old profile: {profile_dir.name}")
+										except (ValueError, IndexError) as e:
+												logging.warning(f"Error processing profile directory {profile_dir}: {e}")
+
+				# Look for existing profile for this email
+				existing_profile = None
+				for profile_dir in sessionsDir.iterdir():
+						if profile_dir.is_dir() and profile_dir.name.startswith(f"{self.email}_"):
+								existing_profile = profile_dir
+								break
+
+				if existing_profile:
+						logging.info(f"Using existing profile: {existing_profile.name}")
+						return existing_profile
+
+				# Create new profile if none exists
 				sessionid = f"{self.email}_{int(time.time())}"
 				userSessionDir = sessionsDir / sessionid
 				userSessionDir.mkdir(parents=True, exist_ok=True)
+				logging.info(f"Created new profile: {sessionid}")
 
 				return userSessionDir
 
