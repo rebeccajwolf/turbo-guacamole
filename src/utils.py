@@ -1114,7 +1114,7 @@ def split_message(message: str, max_length: int = 1900) -> List[str]:
 			if in_code_block:
 				current_part += "```\n"  # Close current code block
 				parts.append(current_part.rstrip())
-				current_part = f"```{code_block_lang}\n{line}\n"  # Start new code block
+				current_part = f"```\n{line}\n"  # Start new code block without language
 			else:
 				parts.append(current_part.rstrip())
 				current_part = line + '\n'
@@ -1136,7 +1136,6 @@ def split_message(message: str, max_length: int = 1900) -> List[str]:
 	
 	return parts
 
-
 def sendNotification(title: str, body: str, e: Exception = None) -> None:
 	try:
 		if not CONFIG.apprise.enabled or (
@@ -1157,7 +1156,7 @@ def sendNotification(title: str, body: str, e: Exception = None) -> None:
 		if has_discord:
 			# Clean and escape the message for Discord formatting
 			formatted_body = formatted_body.replace("```", "'''")  # Temporarily replace code blocks
-			formatted_body = formatted_body.replace("_", "\\_").replace("*", "\\*").replace("`", "\\`")
+			formatted_body = formatted_body.replace("_", "\\_").replace("*", "\\*")
 			
 			# Handle exception formatting
 			if e is not None:
@@ -1165,16 +1164,19 @@ def sendNotification(title: str, body: str, e: Exception = None) -> None:
 				if hasattr(e, '__traceback__'):
 					import traceback
 					tb_str = ''.join(traceback.format_tb(e.__traceback__))
-					error_msg = f"Error: {str(e)}\n\nTraceback:\n{tb_str}"
+					# Preserve the error type and message
+					error_type = e.__class__.__name__
+					error_msg = f"{error_type}: {str(e)}\n\nTraceback:\n{tb_str}"
 				else:
-					error_msg = str(e)
+					error_type = e.__class__.__name__
+					error_msg = f"{error_type}: {str(e)}"
 				
 				# Clean up the error message
 				error_msg = error_msg.replace("```", "'''")  # Remove nested code blocks
 				error_msg = error_msg.replace("\t", "    ")  # Replace tabs with spaces
 				
-				# Add code block formatting
-				formatted_body = f"{formatted_body}\n```python\n{error_msg}\n```"
+				# Add code block formatting without language specification
+				formatted_body = f"{formatted_body}\n```\n{error_msg}\n```"
 			
 			# Restore any legitimate code blocks
 			formatted_body = formatted_body.replace("'''", "```")
