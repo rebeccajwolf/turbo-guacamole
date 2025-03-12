@@ -567,7 +567,12 @@ class Utils:
 						time.sleep(10)
 
 	def goToSearch(self) -> None:
-		self.webdriver.get(SEARCH_URL)
+		try:
+			self.webdriver.get(SEARCH_URL)
+		except TimeoutException:
+			logging.warning("Timeout occurred while loading search page. Retrying...")
+			self.webdriver.execute_script("window.stop()")
+			self.webdriver.get(SEARCH_URL)
 		# assert (
 		#     self.webdriver.current_url == SEARCH_URL
 		# ), f"{self.webdriver.current_url} {SEARCH_URL}"  # need regex: AssertionError: https://www.bing.com/?toWww=1&redig=A5B72363182B49DEBB7465AD7520FDAA https://bing.com/

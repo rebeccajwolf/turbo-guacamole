@@ -644,9 +644,9 @@ class Searches:
                 # Countdown until the next search attempt
                 remaining_time = sleepTime
                 while remaining_time > 0:
-                    mins, secs = divmod(int(remaining_time), 60)
-                    time_format = f"{mins:02d}:{secs:02d}"
-                    print(f"Next search in: {time_format}", end="\r")  # \r to overwrite the previous line
+                    # mins, secs = divmod(int(remaining_time), 60)
+                    # time_format = f"{mins:02d}:{secs:02d}"
+                    # print(f"Next search in: {time_format}", end="\r")  # \r to overwrite the previous line
                     time.sleep(1)
                     remaining_time -= 1
     
@@ -666,7 +666,7 @@ class Searches:
             for attempt in range(3):  # Max 3 attempts to find the search bar
                 try:
                     searchbar = self.browser.utils.waitUntilClickable(
-                        By.ID, "sb_form_q", timeToWait=20  # Increase wait time to 20+ seconds
+                        By.ID, "sb_form_q", timeToWait=40  # Increase wait time to 20+ seconds
                     )
                     searchbar.clear()
                     time.sleep(1)
@@ -750,9 +750,9 @@ class Searches:
                                 # Display countdown in the terminal
                                 remaining_time = cooldown_time
                                 while remaining_time > 0:
-                                    mins, secs = divmod(int(remaining_time), 60)
-                                    time_format = f"{mins:02d}:{secs:02d}"
-                                    print(f"Cooldown: {time_format} remaining", end="\r")  # \r to overwrite the previous line
+                                    # mins, secs = divmod(int(remaining_time), 60)
+                                    # time_format = f"{mins:02d}:{secs:02d}"
+                                    # print(f"Cooldown: {time_format} remaining", end="\r")  # \r to overwrite the previous line
                                     time.sleep(1)
                                     remaining_time -= 1
             
@@ -796,9 +796,9 @@ class Searches:
                     # Display countdown in the terminal
                     remaining_time = cooldown_time
                     while remaining_time > 0:
-                        mins, secs = divmod(int(remaining_time), 60)
-                        time_format = f"{mins:02d}:{secs:02d}"
-                        print(f"Cooldown: {time_format} remaining", end="\r")  # \r to overwrite the previous line
+                        # mins, secs = divmod(int(remaining_time), 60)
+                        # time_format = f"{mins:02d}:{secs:02d}"
+                        # print(f"Cooldown: {time_format} remaining", end="\r")  # \r to overwrite the previous line
                         time.sleep(1)
                         remaining_time -= 1
     
