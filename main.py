@@ -226,18 +226,18 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 					f"[POINTS] You have {formatNumber(startingPoints)} points on your account"
 				)
 				# Only complete daily set if not already done
-				if not completion_status.is_completed(currentAccount.email, "promotions"):
-					Activities(desktopBrowser).completeActivities()
-					completion_status.mark_completed(currentAccount.email, "promotions")
-				else:
-						logging.info("[Promotions] Skipping as it was already completed")
+				# if not completion_status.is_completed(currentAccount.email, "promotions"):
+				# 	Activities(desktopBrowser).completeActivities()
+				# 	completion_status.mark_completed(currentAccount.email, "promotions")
+				# else:
+				# 		logging.info("[Promotions] Skipping as it was already completed")
 
-				# Only complete punch cards if not already done
-				if not completion_status.is_completed(currentAccount.email, "punch_cards"):
-					PunchCards(desktopBrowser).completePunchCards()
-					completion_status.mark_completed(currentAccount.email, "punch_cards")
-				else:
-					logging.info("[PUNCH CARDS] Skipping as it was already completed")
+				# # Only complete punch cards if not already done
+				# if not completion_status.is_completed(currentAccount.email, "punch_cards"):
+				# 	PunchCards(desktopBrowser).completePunchCards()
+				# 	completion_status.mark_completed(currentAccount.email, "punch_cards")
+				# else:
+				# 	logging.info("[PUNCH CARDS] Skipping as it was already completed")
 				# VersusGame(desktopBrowser).completeVersusGame()
 
 
