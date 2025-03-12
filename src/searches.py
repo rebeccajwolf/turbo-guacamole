@@ -650,7 +650,7 @@ class Searches:
                     time.sleep(1)
                     remaining_time -= 1
     
-                print(" " * 20, end="\r")  # Clear the countdown line
+                # print(" " * 20, end="\r")  # Clear the countdown line
     
             # Find the next term that is not blacklisted
             term = next(termsCycle)
@@ -756,7 +756,7 @@ class Searches:
                                     time.sleep(1)
                                     remaining_time -= 1
             
-                                print(" " * 30, end="\r")  # Clear the countdown line
+                                # print(" " * 30, end="\r")  # Clear the countdown line
                                 logging.info("[BING] Cooldown finished. Resuming searches...")
                                 
                                 # Set the allow_cooldown flag to False
@@ -802,7 +802,7 @@ class Searches:
                         time.sleep(1)
                         remaining_time -= 1
     
-                    print(" " * 30, end="\r")  # Clear the countdown line
+                    # print(" " * 30, end="\r")  # Clear the countdown line
                     logging.info("[BING] Cooldown finished. Resuming searches...")
     
                     # Reset the successful search counter
