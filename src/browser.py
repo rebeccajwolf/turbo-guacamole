@@ -493,42 +493,57 @@ class Browser:
 
 
 		def getRemainingSearches(
-				self, desktopAndMobile: bool = False
+						self, desktopAndMobile: bool = False, retries: int = 3
 		) -> RemainingSearches | int:
-				# bingInfo = self.utils.getBingInfo()
-				bingInfo = self.utils.getDashboardData()
-				searchPoints = 1
-				counters = bingInfo["userStatus"]["counters"]
-				pcSearch: dict = counters["pcSearch"][0]
-				pointProgressMax: int = pcSearch["pointProgressMax"]
-
-				searchPoints: int
-				if pointProgressMax in [30, 90, 102]:
-						searchPoints = 3
-				elif pointProgressMax in [50, 150] or pointProgressMax >= 170:
-						searchPoints = 5
-				pcPointsRemaining = pcSearch["pointProgressMax"] - pcSearch["pointProgress"]
-				assert pcPointsRemaining % searchPoints == 0
-				remainingDesktopSearches: int = int(pcPointsRemaining / searchPoints)
-
-				activeLevel = bingInfo["userStatus"]["levelInfo"]["activeLevel"]
-				remainingMobileSearches: int = 0
-				if activeLevel == "Level2":
-						mobileSearch: dict = counters["mobileSearch"][0]
-						mobilePointsRemaining = (
-								mobileSearch["pointProgressMax"] - mobileSearch["pointProgress"]
-						)
-						assert mobilePointsRemaining % searchPoints == 0
-						remainingMobileSearches = int(mobilePointsRemaining / searchPoints)
-				elif activeLevel == "Level1":
-						pass
-				else:
-						raise AssertionError(f"Unknown activeLevel: {activeLevel}")
-
-				if desktopAndMobile:
-						return RemainingSearches(
-								desktop=remainingDesktopSearches, mobile=remainingMobileSearches
-						)
-				if self.mobile:
-						return remainingMobileSearches
-				return remainingDesktopSearches
+				"""
+				Returns the number of remaining searches.
+				:param desktopAndMobile: If True, returns a namedtuple with desktop and mobile searches.
+				:param retries: Number of retries if the data cannot be fetched.
+				:return: The number of remaining searches or a namedtuple with desktop and mobile searches.
+				"""
+				for attempt in range(retries):
+					try:
+							dashboard = self.utils.getDashboardData()
+							searchPoints = 1
+							counters = dashboard["userStatus"]["counters"]
+	
+							# Initialize default values for desktop and mobile searches
+							remainingDesktop = 0
+							remainingMobile = 0
+	
+							# Check if 'pcSearch' key exists and has the expected structure
+							if "pcSearch" in counters and len(counters["pcSearch"]) > 0:
+									progressDesktop = counters["pcSearch"][0]["pointProgress"]
+									targetDesktop = counters["pcSearch"][0]["pointProgressMax"]
+									if len(counters["pcSearch"]) >= 2:
+											progressDesktop += counters["pcSearch"][1]["pointProgress"]
+											targetDesktop += counters["pcSearch"][1]["pointProgressMax"]
+									if targetDesktop in [30, 90, 102]:
+											searchPoints = 3
+									elif targetDesktop == 50 or targetDesktop >= 170 or targetDesktop == 150:
+											searchPoints = 5
+									remainingDesktop = int((targetDesktop - progressDesktop) / searchPoints)
+	
+							# Check if 'mobileSearch' key exists and has the expected structure
+							if (dashboard["userStatus"]["levelInfo"]["activeLevel"] != "Level1" and
+											"mobileSearch" in counters and len(counters["mobileSearch"]) > 0):
+									progressMobile = counters["mobileSearch"][0]["pointProgress"]
+									targetMobile = counters["mobileSearch"][0]["pointProgressMax"]
+									remainingMobile = int((targetMobile - progressMobile) / searchPoints)
+	
+							if desktopAndMobile:
+									return RemainingSearches(desktop=remainingDesktop, mobile=remainingMobile)
+							if self.mobile:
+									return remainingMobile
+							return remainingDesktop
+	
+					except Exception as e:
+							logging.warning(f"[BING] Attempt {attempt + 1} failed to get remaining searches: {e}")
+							if attempt < retries - 1:
+									time.sleep(5)  # Wait for 5 seconds before retrying
+							else:
+									logging.error("[BING] All attempts to get remaining searches failed. Using default values.")
+									if desktopAndMobile:
+											return RemainingSearches(desktop=3, mobile=2)  # Positive default values
+									else:
+											return 3 if not self.mobile else 2  # Positive default values
