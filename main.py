@@ -258,26 +258,26 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 				accountPoints = utils.getAccountPoints()
 
 		if CONFIG.search.type in ("mobile", "both", None):
+			with Browser(mobile=True, account=currentAccount) as mobileBrowser:
+				utils = mobileBrowser.utils
+				Login(mobileBrowser).login()
+				if startingPoints is None:
+					startingPoints = utils.getAccountPoints()
+				ReadToEarn(mobileBrowser).completeReadToEarn()
 			if not completion_status.is_completed(currentAccount.email, "mobile_searches"):
-				with Browser(mobile=True, account=currentAccount) as mobileBrowser:
-					utils = mobileBrowser.utils
-					Login(mobileBrowser).login()
-					if startingPoints is None:
-						startingPoints = utils.getAccountPoints()
-					ReadToEarn(mobileBrowser).completeReadToEarn()
-					with Searches(mobileBrowser) as searches:
-						searches.bingSearches()
+				with Searches(mobileBrowser) as searches:
+					searches.bingSearches()
 				completion_status.mark_completed(currentAccount.email, "mobile_searches")
 			elif completion_status.is_completed(currentAccount.email, "mobile_searches"):
 				logging.info("[BING] Skipping mobile searches as they were already completed")
 
-				goalPoints = utils.getGoalPoints()
-				goalTitle = utils.getGoalTitle()
+			goalPoints = utils.getGoalPoints()
+			goalTitle = utils.getGoalTitle()
 
-				remainingSearches = mobileBrowser.getRemainingSearches(
-					desktopAndMobile=True
-				)
-				accountPoints = utils.getAccountPoints()
+			remainingSearches = mobileBrowser.getRemainingSearches(
+				desktopAndMobile=True
+			)
+			accountPoints = utils.getAccountPoints()
 
 		logging.info(
 			f"[POINTS] You have earned {formatNumber(accountPoints - startingPoints)} points this run !"
