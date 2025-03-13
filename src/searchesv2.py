@@ -143,7 +143,7 @@ class Searches:
             return [term]
         return relatedTerms
 
-    def bingSearches(self) -> None:
+    def bingSearches(self, pointsCounter: int = 0) -> None:
       logging.info(
             f"[BING] Starting {self.browser.browserType.capitalize()} Edge Bing searches..."
         )
@@ -162,7 +162,7 @@ class Searches:
           logging.debug(
               f"google_trends after load = {list(self.googleTrendsShelf.items())}"
           )
-        initial_points, pointsCounter = self.browser.utils.getAccountPoints()
+        initial_points = self.browser.utils.getAccountPoints()
         successful_searches = 0
 
         i = 0
