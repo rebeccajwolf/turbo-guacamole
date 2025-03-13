@@ -149,7 +149,12 @@ class Searches:
         )
       self.browser.utils.goToSearch()
       try:
-        numberOfSearches = self.browser.getRemainingSearches(desktopAndMobile=True)
+        numberOfSearches = self.browser.getRemainingSearches()
+        if (numberOfSearches == 0):
+            logging.info(
+                f"[BING] Finished {self.browser.browserType.capitalize()} Edge Bing searches !"
+            )
+            return True
         if numberOfSearches.getTotal() > len(self.googleTrendsShelf):
           # self.googleTrendsShelf.clear()  # Maybe needed?
           logging.debug(
@@ -202,6 +207,7 @@ class Searches:
           logging.info(
               f"[BING] Completed {successful_searches}/{numberOfSearches} searches. "
               f"[BING] Points earned through {self.browser.browserType.capitalize()} Searches: {points_earned}"
+              f"[BING] Finished {self.browser.browserType.capitalize()} Edge Bing searches !"
           )
           
           # Return false if we didn't complete all searches
