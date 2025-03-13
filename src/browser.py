@@ -8,6 +8,7 @@ import threading
 import shutil
 import psutil
 import subprocess
+import json
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Type
@@ -394,16 +395,16 @@ class Browser:
 				options.add_argument("--disable-background-timer-throttling")
 				options.add_argument("--disable-backgrounding-occluded-windows")
 				# options.add_argument("--disable-features=TranslateUI")
-				# options.add_argument("--disable-ipc-flooding-protection")
-				# options.add_argument("--disable-renderer-backgrounding")
+				options.add_argument("--disable-ipc-flooding-protection")
+				options.add_argument("--disable-renderer-backgrounding")
 				# options.add_argument("--force-color-profile=srgb")
 				# options.add_argument("--metrics-recording-only")
-				# options.add_argument("--no-first-run")
+				options.add_argument("--no-first-run")
 
 				# Microsoft-specific options
-				# options.add_argument("--disable-prompt-on-repost")
-				# options.add_argument("--disable-domain-reliability")
-				# options.add_argument("--disable-client-side-phishing-detection")
+				options.add_argument("--disable-prompt-on-repost")
+				options.add_argument("--disable-domain-reliability")
+				options.add_argument("--disable-client-side-phishing-detection")
 				options.page_load_strategy = "eager"
 
 				seleniumwireOptions: dict[str, Any] = {

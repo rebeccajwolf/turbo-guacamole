@@ -328,7 +328,7 @@ class Searches:
 							
 							# Wait for search results to be visible again
 							try:
-									WebDriverWait(self.webdriver, 10).until(
+									WebDriverWait(self.webdriver, 20).until(
 											EC.presence_of_element_located((By.CSS_SELECTOR, "#b_results"))
 									)
 							except TimeoutException:

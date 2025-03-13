@@ -613,8 +613,8 @@ class Utils:
 		return response.json()
 
 	def isLoggedIn(self) -> bool:
-		if self.getBingInfo()["isRewardsUser"]:  # faster, if it works
-			return True
+		# if self.getBingInfo()["isRewardsUser"]:  # faster, if it works
+		# 	return True
 		self.webdriver.get(
 			"https://rewards.bing.com/Signin/"
 		)  # changed site to allow bypassing when M$ blocks access to login.live.com randomly
@@ -762,7 +762,7 @@ class Utils:
 			WebDriverWait(self.webdriver, 10).until(
 				expected_conditions.element_to_be_clickable(element)
 			)
-			jsClick(element)
+			self.jsClick(element)
 
 def take_screenshot(webdriver: WebDriver, name: str = None) -> str:
 		"""

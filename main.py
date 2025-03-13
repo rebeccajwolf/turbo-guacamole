@@ -226,18 +226,18 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 					f"[POINTS] You have {formatNumber(startingPoints)} points on your account"
 				)
 				# Only complete daily set if not already done
-				if not completion_status.is_completed(currentAccount.email, "promotions"):
-					Activities(desktopBrowser).completeActivities()
-					completion_status.mark_completed(currentAccount.email, "promotions")
-				else:
-						logging.info("[Promotions] Skipping as it was already completed")
+				# if not completion_status.is_completed(currentAccount.email, "promotions"):
+				# 	Activities(desktopBrowser).completeActivities()
+				# 	completion_status.mark_completed(currentAccount.email, "promotions")
+				# else:
+				# 		logging.info("[Promotions] Skipping as it was already completed")
 
-				# Only complete punch cards if not already done
-				if not completion_status.is_completed(currentAccount.email, "punch_cards"):
-					PunchCards(desktopBrowser).completePunchCards()
-					completion_status.mark_completed(currentAccount.email, "punch_cards")
-				else:
-					logging.info("[PUNCH CARDS] Skipping as it was already completed")
+				# # Only complete punch cards if not already done
+				# if not completion_status.is_completed(currentAccount.email, "punch_cards"):
+				# 	PunchCards(desktopBrowser).completePunchCards()
+				# 	completion_status.mark_completed(currentAccount.email, "punch_cards")
+				# else:
+				# 	logging.info("[PUNCH CARDS] Skipping as it was already completed")
 				# VersusGame(desktopBrowser).completeVersusGame()
 
 
@@ -258,18 +258,18 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 				accountPoints = utils.getAccountPoints()
 
 		if CONFIG.search.type in ("mobile", "both", None):
-			if not completion_status.is_completed(currentAccount.email, "mobile_searches"):
-				with Browser(mobile=True, account=currentAccount) as mobileBrowser:
-					utils = mobileBrowser.utils
-					Login(mobileBrowser).login()
-					if startingPoints is None:
-						startingPoints = utils.getAccountPoints()
-					ReadToEarn(mobileBrowser).completeReadToEarn()
+			with Browser(mobile=True, account=currentAccount) as mobileBrowser:
+				utils = mobileBrowser.utils
+				Login(mobileBrowser).login()
+				if startingPoints is None:
+					startingPoints = utils.getAccountPoints()
+				ReadToEarn(mobileBrowser).completeReadToEarn()
+				if not completion_status.is_completed(currentAccount.email, "mobile_searches"):
 					with Searches(mobileBrowser) as searches:
 						searches.bingSearches()
-				completion_status.mark_completed(currentAccount.email, "mobile_searches")
-			elif completion_status.is_completed(currentAccount.email, "mobile_searches"):
-				logging.info("[BING] Skipping mobile searches as they were already completed")
+					completion_status.mark_completed(currentAccount.email, "mobile_searches")
+				elif completion_status.is_completed(currentAccount.email, "mobile_searches"):
+					logging.info("[BING] Skipping mobile searches as they were already completed")
 
 				goalPoints = utils.getGoalPoints()
 				goalTitle = utils.getGoalTitle()
