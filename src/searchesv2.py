@@ -212,7 +212,7 @@ class Searches:
           return True
 
       except Exception as e:
-          logging.error(f"[BING] Critical error during searches: {str(e)}")
+          logging.error(f"[BING] Critical error during searches: {str(e)}", exc_info=True)
           return False
 
 
