@@ -155,12 +155,12 @@ class Searches:
                 f"[BING] Finished {self.browser.browserType.capitalize()} Edge Bing searches !"
             )
             return True
-        if numberOfSearches.getTotal() > len(self.googleTrendsShelf):
+        if numberOfSearches > len(self.googleTrendsShelf):
           # self.googleTrendsShelf.clear()  # Maybe needed?
           logging.debug(
               f"google_trends before load = {list(self.googleTrendsShelf.items())}"
           )
-          trends = self.getGoogleTrends(numberOfSearches.getTotal())
+          trends = self.getGoogleTrends(numberOfSearches)
           shuffle(trends)
           for trend in trends:
               self.googleTrendsShelf[trend] = None
