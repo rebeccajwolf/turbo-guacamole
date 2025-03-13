@@ -149,7 +149,7 @@ class Searches:
         )
       self.browser.utils.goToSearch()
       try:
-        numberOfSearches = self.browser.getRemainingSearches()
+        numberOfSearches = self.browser.getRemainingSearches(desktopAndMobile=True)
         if numberOfSearches.getTotal() > len(self.googleTrendsShelf):
           # self.googleTrendsShelf.clear()  # Maybe needed?
           logging.debug(
