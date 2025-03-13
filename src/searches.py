@@ -663,7 +663,7 @@ class Searches:
     
             # Try to find the search bar
             searchbar: WebElement
-            for attempt in range(3):  # Max 3 attempts to find the search bar
+            for attempt in range(7):  # Max 7 attempts to find the search bar
                 try:
                     searchbar = self.browser.utils.waitUntilClickable(
                         By.ID, "sb_form_q", timeToWait=40  # Increase wait time to 20+ seconds
