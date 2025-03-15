@@ -25,6 +25,10 @@ activities:
     - Safeguard your family's info
     - Get Spotify Premium for free
     - A new web hero
+    - Bing app search
+    - Chrome extension search
+    - Windows search
+    - Get 100 points with search bar
   search: # list of searches to do for search-based activities
     "Black Friday shopping": black friday deals
     "Discover open job roles": jobs at microsoft
