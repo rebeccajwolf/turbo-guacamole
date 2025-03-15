@@ -255,100 +255,100 @@ class Browser:
 				self.cleanup()
 
 		def _apply_cdp_settings(self, target_id=None):
-				"""Apply CDP settings to a specific target or current tab"""
-				if self.browserConfig.get("sizes"):
-						deviceHeight = self.browserConfig["sizes"]["height"]
-						deviceWidth = self.browserConfig["sizes"]["width"]
-				else:
-						if self.mobile:
-								deviceHeight = random.randint(568, 1024)
-								deviceWidth = random.randint(320, min(576, int(deviceHeight * 0.7)))
-						else:
-								deviceWidth = random.randint(1024, 2560)
-								deviceHeight = random.randint(768, min(1440, int(deviceWidth * 0.8)))
-						self.browserConfig["sizes"] = {
-								"height": deviceHeight,
-								"width": deviceWidth,
+			"""Apply CDP settings to a specific target or current tab"""
+			if self.browserConfig.get("sizes"):
+					deviceHeight = self.browserConfig["sizes"]["height"]
+					deviceWidth = self.browserConfig["sizes"]["width"]
+			else:
+					if self.mobile:
+							deviceHeight = random.randint(568, 1024)
+							deviceWidth = random.randint(320, min(576, int(deviceHeight * 0.7)))
+					else:
+							deviceWidth = random.randint(1024, 2560)
+							deviceHeight = random.randint(768, min(1440, int(deviceWidth * 0.8)))
+					self.browserConfig["sizes"] = {
+							"height": deviceHeight,
+							"width": deviceWidth,
+					}
+					saveBrowserConfig(self.userDataDir, self.browserConfig)
+
+			if self.mobile:
+					screenHeight = deviceHeight + 146
+					screenWidth = deviceWidth
+			else:
+					screenWidth = deviceWidth + 55
+					screenHeight = deviceHeight + 151
+
+			logging.info(f"Screen size: {screenWidth}x{screenHeight}")
+			logging.info(f"Device size: {deviceWidth}x{deviceHeight}")
+
+
+			cdp_commands = [
+					(
+						"Emulation.setTouchEmulationEnabled",
+						{"enabled": self.mobile}
+					),
+					(
+						"Emulation.setDeviceMetricsOverride",
+						{
+							"width": deviceWidth,
+							"height": deviceHeight,
+							"deviceScaleFactor": 0,
+							"mobile": self.mobile,
+							"screenWidth": screenWidth,
+							"screenHeight": screenHeight,
+							"positionX": 0,
+							"positionY": 0,
+							"viewport": {
+									"x": 0,
+									"y": 0,
+									"width": deviceWidth,
+									"height": deviceHeight,
+									"scale": 1,
+							},
 						}
-						saveBrowserConfig(self.userDataDir, self.browserConfig)
+					),
+					(
+						"Emulation.setUserAgentOverride",
+						{
+							"userAgent": self.userAgent,
+							"platform": self.userAgentMetadata["platform"],
+							"userAgentMetadata": self.userAgentMetadata,
+						},
+					)
+				]
 
-				if self.mobile:
-						screenHeight = deviceHeight + 146
-						screenWidth = deviceWidth
+
+			for command, params in cdp_commands:
+				if target_id:
+					self.webdriver.execute_cdp_cmd(
+						f'Target.sendMessageToTarget',
+						{
+							'targetId': target_id,
+							'message': json.dumps({
+								'method': command,
+								'params': params
+							})
+						}
+					)
 				else:
-						screenWidth = deviceWidth + 55
-						screenHeight = deviceHeight + 151
-
-				logging.info(f"Screen size: {screenWidth}x{screenHeight}")
-				logging.info(f"Device size: {deviceWidth}x{deviceHeight}")
-
-
-				cdp_commands = [
-						(
-								"Emulation.setTouchEmulationEnabled",
-								{"enabled": self.mobile}
-						),
-						(
-								"Emulation.setDeviceMetricsOverride",
-								{
-										"width": deviceWidth,
-										"height": deviceHeight,
-										"deviceScaleFactor": 0,
-										"mobile": self.mobile,
-										"screenWidth": screenWidth,
-										"screenHeight": screenHeight,
-										"positionX": 0,
-										"positionY": 0,
-										"viewport": {
-												"x": 0,
-												"y": 0,
-												"width": deviceWidth,
-												"height": deviceHeight,
-												"scale": 1,
-										},
-								}
-						),
-						(
-								"Emulation.setUserAgentOverride",
-								{
-										"userAgent": self.userAgent,
-										"platform": self.userAgentMetadata["platform"],
-										"userAgentMetadata": self.userAgentMetadata,
-								},
-						)
-					]
-
-
-				for command, params in cdp_commands:
-						if target_id:
-								self.webdriver.execute_cdp_cmd(
-										f'Target.sendMessageToTarget',
-										{
-												'targetId': target_id,
-												'message': json.dumps({
-														'method': command,
-														'params': params
-												})
-										}
-								)
-						else:
-								self.webdriver.execute_cdp_cmd(command, params)
+					self.webdriver.execute_cdp_cmd(command, params)
 
 		def _setup_cdp_listeners(self):
-				"""Setup listeners for new tab creation and navigation"""
-				def handle_target_created(target):
-						target_id = target.get('targetId')
-						if target.get('type') == 'page':
-								self._apply_cdp_settings(target_id)
+			"""Setup listeners for new tab creation and navigation"""
+			def handle_target_created(target):
+				target_id = target.get('targetId')
+				if target.get('type') == 'page':
+					self._apply_cdp_settings(target_id)
 
-				# Enable target events
-				self.webdriver.execute_cdp_cmd('Target.setDiscoverTargets', {'discover': True})
-				
-				# Add event listener for target creation
-				self.webdriver.add_cdp_listener('Target.targetCreated', handle_target_created)
-				
-				# Apply settings to initial tab
-				self._apply_cdp_settings()
+			# Enable target events
+			self.webdriver.execute_cdp_cmd('Target.setDiscoverTargets', {'discover': True})
+			
+			# Add event listener for target creation
+			self.webdriver.add_cdp_listener('Target.targetCreated', handle_target_created)
+			
+			# Apply settings to initial tab
+			self._apply_cdp_settings()
 
 		def browserSetup(
 				self,
@@ -377,28 +377,29 @@ class Browser:
 				options.add_argument("--disable-setuid-sandbox")
 				options.add_argument("--disable-software-rasterizer")
 				options.add_argument("--disable-site-isolation-trials")
-				# options.add_argument("--disable-component-update")
+				options.add_argument("--disable-component-update")
 				
 				# Wayland specific options
 				options.add_argument("--ozone-platform=wayland")
 				options.add_argument("--enable-features=UseOzonePlatform")
+				options.add_argument("--enable-wayland-ime")
 				
 				# Enhanced privacy and security options
 				options.add_argument("--disable-web-security")
-				# options.add_argument("--disable-blink-features=AutomationControlled")
-				# options.add_argument("--disable-features=IsolateOrigins,site-per-process,AutomationControlled")
-				# options.add_argument("--disable-blink-features")
+				options.add_argument("--disable-blink-features=AutomationControlled")
+				options.add_argument("--disable-features=IsolateOrigins,site-per-process,AutomationControlled")
+				options.add_argument("--disable-blink-features")
 
 				# Performance and stability options
-				# options.add_argument("--disable-dev-tools")
+				options.add_argument("--disable-dev-tools")
 				options.add_argument("--disable-background-networking")
 				options.add_argument("--disable-background-timer-throttling")
 				options.add_argument("--disable-backgrounding-occluded-windows")
-				# options.add_argument("--disable-features=TranslateUI")
+				options.add_argument("--disable-features=TranslateUI")
 				options.add_argument("--disable-ipc-flooding-protection")
 				options.add_argument("--disable-renderer-backgrounding")
-				# options.add_argument("--force-color-profile=srgb")
-				# options.add_argument("--metrics-recording-only")
+				options.add_argument("--force-color-profile=srgb")
+				options.add_argument("--metrics-recording-only")
 				options.add_argument("--no-first-run")
 
 				# Microsoft-specific options
