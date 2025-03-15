@@ -82,11 +82,11 @@ def main():
 					logging.error(
 						f"Failed to execute account {currentAccount.email} after {max_retries} attempts. Moving to next account."
 					)
-				sendNotification(
-					f"⚠️ Error executing {currentAccount.email} after {max_retries} retries",
-					traceback.format_exc(),
-					e1,
-				)
+					sendNotification(
+						f"⚠️ Error executing {currentAccount.email} after {max_retries} retries",
+						traceback.format_exc(),
+						e1,
+					)
 
 	# Save the current day's points data for the next day in the "logs" folder
 	save_previous_points_data(previous_points_data)
