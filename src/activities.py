@@ -390,11 +390,12 @@ class Activities:
 				self.browser.utils.getDailySetPromotions()
 				+ self.browser.utils.getMorePromotions()
 			):  # Have to refresh
-				if activity["pointProgress"] < activity["pointProgressMax"]:
-					incompleteActivities.append(cleanupActivityTitle(activity["title"]))
-			for incompleteActivityToIgnore in CONFIG.activities.ignore:
-				if incompleteActivityToIgnore in incompleteActivities:
-					incompleteActivities.remove(incompleteActivityToIgnore)
+				activityTitle = cleanupActivityTitle(activity["title"])
+				if (
+                     activityTitle not in CONFIG.activities.ignore
+                     and activity["pointProgress"] < activity["pointProgressMax"]
+                 ):
+					incompleteActivities.append(activityTitle)
 			if incompleteActivities:
 				logging.info(f"incompleteActivities: {incompleteActivities}")
 				sendNotification(
