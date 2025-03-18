@@ -141,7 +141,7 @@ class Browser:
 			current_pid = os.getpid()
 			for proc in psutil.process_iter(['pid', 'name', 'ppid']):
 				proc_name = proc.info['name'].lower()
-				if any(name in proc_name for name in ['chrome', 'chromium', 'chromedriver'])  and (
+				if any(name in proc_name for name in ['chrome', 'chromium', 'chromedriver']) and (
                         proc.info["ppid"] == current_pid
                         or psutil.Process(proc.info["ppid"]).ppid() == current_pid
                     ):
