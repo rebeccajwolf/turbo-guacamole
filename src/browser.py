@@ -137,22 +137,27 @@ class Browser:
 	def kill_existing_chrome_processes(self):
 		"""Kill any existing chrome processes to ensure clean startup"""
 		try:
-			for proc in psutil.process_iter(['pid', 'name']):
+			# Get the current script's process ID
+			current_pid = os.getpid()
+			for proc in psutil.process_iter(['pid', 'name', 'ppid']):
 				proc_name = proc.info['name'].lower()
-				if any(name in proc_name for name in ['chrome', 'chromium', 'chromedriver']):
+				if any(name in proc_name for name in ['chrome', 'chromium', 'chromedriver'])  and (
+                        proc.info["ppid"] == current_pid
+                        or psutil.Process(proc.info["ppid"]).ppid() == current_pid
+                    ):
 					try:
 						process = psutil.Process(proc.info["pid"])
 						process.terminate()
 						process.wait(timeout=3)
-					except (psutil.NoSuchProcess, psutil.TimeoutExpired):
+					except (psutil.NoSuchProcess, psutil.TimeoutExpired, psutil.AccessDenied, psutil.ZombieProcess):
 						try:
 							process.kill()
-						except psutil.NoSuchProcess:
+						except (psutil.NoSuchProcess, psutil.TimeoutExpired, psutil.AccessDenied, psutil.ZombieProcess):
 							pass
 				
 				time.sleep(1)
 		except Exception as e:
-				logging.warning(f"Error cleaning up chrome processes: {e}")
+			logging.warning(f"Error cleaning up chrome processes: {e}")
 
 	def setupProfiles(self) -> Path:
 		"""Sets up the sessions profile for the chrome browser with 24-hour retention."""
@@ -358,6 +363,7 @@ class Browser:
 		options = undetected_chromedriver.ChromeOptions()
 		options.headless = self.headless
 		options.add_argument(f"--lang={self.localeLang}")
+		options.add_argument(f"--user-data-dir={self.userDataDir.as_posix()}")
 		options.add_argument("--log-level=3")
 		# options.add_argument(
 		# 		"--blink-settings=imagesEnabled=false"
@@ -379,6 +385,7 @@ class Browser:
 		options.add_argument("--disable-software-rasterizer")
 		options.add_argument("--disable-site-isolation-trials")
 		options.add_argument("--disable-component-update")
+		options.add_argument("--new-instance")  # Force new instance
 		
 		# Wayland specific options
 		options.add_argument("--ozone-platform=wayland")
@@ -437,7 +444,7 @@ class Browser:
 			driver = webdriver.Chrome(
 				options=options,
 				seleniumwire_options=seleniumwireOptions,
-				user_data_dir=self.userDataDir.as_posix(),
+				# user_data_dir=self.userDataDir.as_posix(),
 				driver_executable_path="chromedriver",
 			)
 
