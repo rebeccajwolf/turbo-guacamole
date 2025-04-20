@@ -450,18 +450,18 @@ def main_with_schedule():
 		run_job_with_activity()
 		
 		# Set up and start scheduler
-		setup_schedule()
-		schedule_manager = ScheduleManager()
-		schedule_manager.start()
+		# setup_schedule()
+		# schedule_manager = ScheduleManager()
+		# schedule_manager.start()
 		
-		# Wait for keyboard interrupt or other signals
-		try:
-			while True:
-				time.sleep(1)
-		except KeyboardInterrupt:
-			logging.info("Received shutdown signal, cleaning up...")
-		finally:
-			schedule_manager.stop()
+		# # Wait for keyboard interrupt or other signals
+		# try:
+		# 	while True:
+		# 		time.sleep(1)
+		# except KeyboardInterrupt:
+		# 	logging.info("Received shutdown signal, cleaning up...")
+		# finally:
+		# 	schedule_manager.stop()
 			
 	except Exception as e:
 		logging.exception("Fatal error occurred")
