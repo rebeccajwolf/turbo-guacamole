@@ -148,7 +148,7 @@ class Browser:
 					try:
 						process = psutil.Process(proc.info["pid"])
 						process.terminate()
-						process.wait(timeout=3)
+						process.wait(timeout=7)
 					except (psutil.NoSuchProcess, psutil.TimeoutExpired, psutil.AccessDenied, psutil.ZombieProcess):
 						try:
 							process.kill()
@@ -229,17 +229,17 @@ class Browser:
 				try:
 					# Ensure webdriver is fully quit
 					self.webdriver.quit()
-					
+					time.sleep(7)
 					# Kill any remaining chrome processes
 					self.kill_existing_chrome_processes()
-					
+					time.sleep(7)
 					# Clean up the user data directory
 					# if hasattr(self, 'userDataDir') and self.userDataDir.exists():
 					# 		shutil.rmtree(self.userDataDir, ignore_errors=True)
 					
 					# Reset Weston before starting new browser session
 					self.reset_weston()
-					time.sleep(2)
+					time.sleep(7)
 				except Exception as e:
 					logging.error(f"Error during browser quit: {str(e)}")
 				self.webdriver = None
