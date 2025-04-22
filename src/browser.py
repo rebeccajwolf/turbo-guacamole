@@ -75,8 +75,8 @@ class Browser:
 				# Clean up any existing chrome processes
 				self.kill_existing_chrome_processes()
 				time.sleep(7)
-				self.cleanup()
-				time.sleep(7)
+				# self.cleanup()
+				# time.sleep(7)
 				self.webdriver = self.browserSetup()
 				self._setup_cdp_listeners()
 				self.utils = Utils(self.webdriver)
