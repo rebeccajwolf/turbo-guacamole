@@ -90,7 +90,7 @@ class Browser:
                 )
 				time.sleep(retry_delay)
                 # Clean up any existing Chrome processes
-				self.kill_existing_chrome_processes()
+				self.cleanup()
 
 	def reset_weston(self):
 		"""Reset Weston compositor for clean display server state"""
