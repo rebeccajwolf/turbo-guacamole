@@ -68,19 +68,29 @@ class Browser:
 
 	def setup_browser(self):
 		"""Setup browser instance with proper error handling"""
-		try:
-			# Clean up any existing chrome processes
-			self.kill_existing_chrome_processes()
-			time.sleep(7)
-			self.cleanup()
-			time.sleep(7)
-			self.webdriver = self.browserSetup()
-			self._setup_cdp_listeners()
-			self.utils = Utils(self.webdriver)
-		except Exception as e:
-			logging.error(f"Error setting up browser: {str(e)}")
-			self.cleanup()
-			raise
+		max_retries = 3
+		retry_delay = 5
+		for attempt in range(max_retries):
+			try:
+				# Clean up any existing chrome processes
+				self.kill_existing_chrome_processes()
+				time.sleep(7)
+				self.cleanup()
+				time.sleep(7)
+				self.webdriver = self.browserSetup()
+				self._setup_cdp_listeners()
+				self.utils = Utils(self.webdriver)
+			except Exception as e:
+				if attempt == max_retries - 1:
+					logging.error(f"[BROWSER] Error setting up browser: {str(e)}")
+					self.cleanup()
+					raise
+				logging.warning(
+                    f"[BROWSER] Browser initialization attempt {attempt + 1} failed: {str(e)}"
+                )
+				time.sleep(retry_delay)
+                # Clean up any existing Chrome processes
+				self.kill_existing_chrome_processes()
 
 	def reset_weston(self):
 		"""Reset Weston compositor for clean display server state"""
@@ -156,6 +166,8 @@ class Browser:
 							pass
 				
 				time.sleep(1)
+			os.system('pkill -f chrome 2>/dev/null')
+			os.system('pkill -f chromedriver 2>/dev/null')
 		except Exception as e:
 			logging.warning(f"Error cleaning up chrome processes: {e}")
 
