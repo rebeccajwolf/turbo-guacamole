@@ -9,6 +9,7 @@ import shutil
 import psutil
 import subprocess
 import json
+import socket
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Type
@@ -77,7 +78,8 @@ class Browser:
 				time.sleep(7)
 				# self.cleanup()
 				# time.sleep(7)
-				self.webdriver = self.browserSetup()
+				debug_port = self.find_available_port()
+				self.webdriver = self.browserSetup(debug_port)
 				self._setup_cdp_listeners()
 				self.utils = Utils(self.webdriver)
 			except Exception as e:
@@ -91,7 +93,21 @@ class Browser:
 				time.sleep(retry_delay)
                 # Clean up any existing Chrome processes
 				self.cleanup()
-
+	
+	def find_available_port(self, start_port=9222, max_port=9999):
+		"""Find an available port for Chrome debugging"""
+		for port in range(start_port, max_port + 1):
+			try:
+				# Try to bind to the port
+				with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+					s.bind(("127.0.0.1", port))
+					return port
+			except OSError:
+				continue
+		raise RuntimeError(
+			f"Could not find an available port between {start_port} and {max_port}"
+		)
+	
 	def reset_weston(self):
 		"""Reset Weston compositor for clean display server state"""
 		try:
@@ -167,6 +183,7 @@ class Browser:
 				
 				time.sleep(1)
 			os.system('pkill -f chrome 2>/dev/null')
+			os.system('pkill -f chromium 2>/dev/null')
 			os.system('pkill -f chromedriver 2>/dev/null')
 		except Exception as e:
 			logging.warning(f"Error cleaning up chrome processes: {e}")
@@ -256,6 +273,21 @@ class Browser:
 					logging.error(f"Error during browser quit: {str(e)}")
 				self.webdriver = None
 				self.utils = None
+		else:
+			try:
+				time.sleep(7)
+				# Kill any remaining chrome processes
+				self.kill_existing_chrome_processes()
+				time.sleep(7)
+				# Clean up the user data directory
+				# if hasattr(self, 'userDataDir') and self.userDataDir.exists():
+				# 		shutil.rmtree(self.userDataDir, ignore_errors=True)
+				
+				# Reset Weston before starting new browser session
+				self.reset_weston()
+				time.sleep(7)
+			except Exception as e:
+				logging.error(f"Error during browser quit: {str(e)}")
 
 	def __enter__(self):
 		logging.debug("in __enter__")
@@ -370,10 +402,14 @@ class Browser:
 
 	def browserSetup(
 			self,
+			debug_port: int
 	) -> undetected_chromedriver.Chrome:
 		# Configure and setup the Chrome browser
 		options = undetected_chromedriver.ChromeOptions()
 		options.headless = self.headless
+		options.add_argument(
+            f"--remote-debugging-port={debug_port}"
+        )  # Use specific debugging port
 		options.add_argument(f"--lang={self.localeLang}")
 		options.add_argument(f"--user-data-dir={self.userDataDir.as_posix()}")
 		options.add_argument("--log-level=3")
