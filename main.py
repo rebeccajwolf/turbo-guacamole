@@ -74,7 +74,7 @@ def main():
 					logging.error(
 						f"Error executing account {currentAccount.email} (attempt {retry_count}/{max_retries}): {str(e1)}"
 					)
-					time.sleep(15)
+					time.sleep(30)
 					# Add exponential backoff
 					# wait_time = 2 ** retry_count
 					# logging.info(f"Waiting {wait_time} seconds before retry...")
@@ -216,10 +216,14 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 	goalTitle: str
 	goalPoints: int
 
+	browser_instances = []  # Keep track of browser instances
+
 	try:
 
 		if CONFIG.search.type in ("desktop", "both", None):
-			with Browser(mobile=False, account=currentAccount) as desktopBrowser:
+			desktop_browser = Browser(mobile=False, account=currentAccount)
+			browser_instances.append(desktop_browser)
+			with desktop_browser as desktopBrowser:
 				utils = desktopBrowser.utils
 				Login(desktopBrowser).login()
 				startingPoints = utils.getAccountPoints()
@@ -259,7 +263,12 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 				accountPoints = utils.getAccountPoints()
 
 		if CONFIG.search.type in ("mobile", "both", None):
-			with Browser(mobile=True, account=currentAccount) as mobileBrowser:
+			# Ensure previous browser is fully cleaned up
+			time.sleep(2)  # Small delay between browser instances
+			
+			mobile_browser = Browser(mobile=True, account=currentAccount)
+			browser_instances.append(mobile_browser)
+			with mobile_browser as mobileBrowser:
 				utils = mobileBrowser.utils
 				Login(mobileBrowser).login()
 				if startingPoints is None:
@@ -346,6 +355,14 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 		# Log the exception
 		logging.error(f"Error during execution: {str(e)}")
 		raise
+	finally:
+		# Ensure all browser instances are properly cleaned up
+		for browser in browser_instances:
+			try:
+				browser.cleanup()
+				time.sleep(1)  # Small delay between cleanup operations
+			except Exception as cleanup_error:
+				logging.error(f"Error during browser cleanup: {str(cleanup_error)}")
 
 
 def export_points_to_csv(points_data):

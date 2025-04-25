@@ -69,30 +69,18 @@ class Browser:
 
 	def setup_browser(self):
 		"""Setup browser instance with proper error handling"""
-		max_retries = 3
-		retry_delay = 5
-		for attempt in range(max_retries):
-			try:
-				# Clean up any existing chrome processes
-				self.kill_existing_chrome_processes()
-				time.sleep(7)
-				# self.cleanup()
-				# time.sleep(7)
-				debug_port = self.find_available_port()
-				self.webdriver = self.browserSetup(debug_port)
-				self._setup_cdp_listeners()
-				self.utils = Utils(self.webdriver)
-			except Exception as e:
-				if attempt == max_retries - 1:
-					logging.error(f"[BROWSER] Error setting up browser: {str(e)}")
-					self.cleanup()
-					raise
-				logging.warning(
-                    f"[BROWSER] Browser initialization attempt {attempt + 1} failed: {str(e)}"
-                )
-				time.sleep(retry_delay)
-                # Clean up any existing Chrome processes
-				self.cleanup()
+		try:
+			# Clean up any existing chrome processes
+			self.kill_existing_chrome_processes()
+			time.sleep(3)
+			debug_port = self.find_available_port()
+			self.webdriver = self.browserSetup(debug_port)
+			self._setup_cdp_listeners()
+			self.utils = Utils(self.webdriver)
+		except Exception as e:
+			logging.error(f"[BROWSER] Error setting up browser: {str(e)}")
+			self.cleanup()
+			raise
 	
 	def find_available_port(self, start_port=9222, max_port=9999):
 		"""Find an available port for Chrome debugging"""
