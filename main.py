@@ -137,7 +137,8 @@ def downloadWebDriver():
 			zip_ref.extractall(temp_dir)
 		
 		# Move the chromedriver to the correct location
-		chromedriver_src = temp_dir / 'chromedriver'
+		# chromedriver_src = temp_dir / 'chromedriver'
+		chromedriver_src = temp_dir / 'chromedriver-linux64' / 'chromedriver'
 		chromedriver_dest = getProjectRoot() / 'chromedriver'
 		
 		# Ensure source file exists
