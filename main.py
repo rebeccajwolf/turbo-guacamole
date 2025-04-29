@@ -31,7 +31,7 @@ from src.loggingColoredFormatter import ColoredFormatter
 from src.utils import CONFIG, sendNotification, getProjectRoot, formatNumber
 from src.exceptions import *
 from src.completion_status import CompletionStatus
-
+from src.active_container import ActiveContainer
 
 
 def main():
@@ -40,58 +40,69 @@ def main():
 	completion_status = CompletionStatus()
 	completion_status.clear_old_status()  # Clean up old status entries
 
-	# Load previous day's points data
-	previous_points_data = load_previous_points_data()
+	# Start container activity maintenance
+	container_keeper = ActiveContainer()
+	container_keeper.start()
 
-	for currentAccount in CONFIG.accounts:
-		max_retries = 17
-		retry_count = 0
-		while retry_count < max_retries:
-			try:
-				earned_points = executeBot(currentAccount, completion_status)
-				previous_points = previous_points_data.get(currentAccount.email, 0)
+	try:
 
-				# Calculate the difference in points from the prior day
-				points_difference = earned_points - previous_points
+		# Load previous day's points data
+		previous_points_data = load_previous_points_data()
 
-				# Append the daily points and points difference to CSV and Excel
-				log_daily_points_to_csv(earned_points, points_difference)
+		for currentAccount in CONFIG.accounts:
+			max_retries = 17
+			retry_count = 0
+			while retry_count < max_retries:
+				try:
+					earned_points = executeBot(currentAccount, completion_status, container_keeper)
+					previous_points = previous_points_data.get(currentAccount.email, 0)
 
-				# Update the previous day's points data
-				previous_points_data[currentAccount.email] = earned_points
+					# Calculate the difference in points from the prior day
+					points_difference = earned_points - previous_points
 
-				logging.info(
-					f"[POINTS] Data for '{currentAccount.email}' appended to the file."
-				)
-				break  # Success - exit retry loop
-			except AccountLockedException:
-				break
-			except AccountSuspendedException:
-				break
-			except Exception as e1:
-				retry_count += 1
-				if retry_count < max_retries:
-					logging.error(
-						f"Error executing account {currentAccount.email} (attempt {retry_count}/{max_retries}): {str(e1)}"
+					# Append the daily points and points difference to CSV and Excel
+					log_daily_points_to_csv(earned_points, points_difference)
+
+					# Update the previous day's points data
+					previous_points_data[currentAccount.email] = earned_points
+
+					logging.info(
+						f"[POINTS] Data for '{currentAccount.email}' appended to the file."
 					)
-					time.sleep(30)
-					# Add exponential backoff
-					# wait_time = 2 ** retry_count
-					# logging.info(f"Waiting {wait_time} seconds before retry...")
-					# time.sleep(wait_time)
-				else:
-					logging.error(
-						f"Failed to execute account {currentAccount.email} after {max_retries} attempts. Moving to next account."
-					)
-					sendNotification(
-						f"⚠️ Error executing {currentAccount.email} after {max_retries} retries",
-						traceback.format_exc(),
-						e1,
-					)
+					break  # Success - exit retry loop
+				except AccountLockedException:
+					break
+				except AccountSuspendedException:
+					break
+				except Exception as e1:
+					retry_count += 1
+					if retry_count < max_retries:
+						logging.error(
+							f"Error executing account {currentAccount.email} (attempt {retry_count}/{max_retries}): {str(e1)}"
+						)
+						time.sleep(30)
+						# Record container activity during error handling
+						container_keeper.record_activity()
+						# Add exponential backoff
+						# wait_time = 2 ** retry_count
+						# logging.info(f"Waiting {wait_time} seconds before retry...")
+						# time.sleep(wait_time)
+					else:
+						logging.error(
+							f"Failed to execute account {currentAccount.email} after {max_retries} attempts. Moving to next account."
+						)
+						sendNotification(
+							f"⚠️ Error executing {currentAccount.email} after {max_retries} retries",
+							traceback.format_exc(),
+							e1,
+						)
 
-	# Save the current day's points data for the next day in the "logs" folder
-	save_previous_points_data(previous_points_data)
-	logging.info("[POINTS] Data saved for the next day.")
+		# Save the current day's points data for the next day in the "logs" folder
+		save_previous_points_data(previous_points_data)
+		logging.info("[POINTS] Data saved for the next day.")
+	finally:
+		# Ensure container activity is stopped
+		container_keeper.stop()
 
 
 def log_daily_points_to_csv(earned_points, points_difference):
@@ -209,7 +220,7 @@ class AppriseSummary(Enum):
 	"""
 
 
-def executeBot(currentAccount, completion_status: CompletionStatus):
+def executeBot(currentAccount, completion_status: CompletionStatus, container_keeper=None):
 	logging.info(f"********************{currentAccount.email}********************")
 
 	startingPoints: int | None = None
@@ -221,6 +232,9 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 	browser_instances = []  # Keep track of browser instances
 
 	try:
+		# Record container activity
+		if container_keeper:
+			container_keeper.record_activity()
 
 		if CONFIG.search.type in ("desktop", "both", None):
 			desktop_browser = Browser(mobile=False, account=currentAccount)
@@ -232,10 +246,18 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 				logging.info(
 					f"[POINTS] You have {formatNumber(startingPoints)} points on your account"
 				)
+
+				# Record container activity after login
+				if container_keeper:
+					container_keeper.record_activity()
+
 				# Only complete daily set if not already done
 				if not completion_status.is_completed(currentAccount.email, "promotions"):
 					Activities(desktopBrowser).completeActivities()
 					completion_status.mark_completed(currentAccount.email, "promotions")
+					# Record activity after completion
+					if container_keeper:
+						container_keeper.record_activity()
 				else:
 						logging.info("[Promotions] Skipping as it was already completed")
 
@@ -243,6 +265,9 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 				if not completion_status.is_completed(currentAccount.email, "punch_cards"):
 					PunchCards(desktopBrowser).completePunchCards()
 					completion_status.mark_completed(currentAccount.email, "punch_cards")
+					# Record activity after completion
+					if container_keeper:
+						container_keeper.record_activity()
 				else:
 					logging.info("[PUNCH CARDS] Skipping as it was already completed")
 				# VersusGame(desktopBrowser).completeVersusGame()
@@ -252,6 +277,9 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 					with Searches(desktopBrowser) as searches:
 						searches.bingSearches()
 					completion_status.mark_completed(currentAccount.email, "desktop_searches")
+					# Record activity after searches
+					if container_keeper:
+						container_keeper.record_activity()
 				elif completion_status.is_completed(currentAccount.email, "desktop_searches"):
 					logging.info("[BING] Skipping desktop searches as they were already completed")
 
@@ -268,6 +296,10 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 			# Ensure previous browser is fully cleaned up
 			time.sleep(2)  # Small delay between browser instances
 			
+			# Record container activity
+			if container_keeper:
+				container_keeper.record_activity()
+
 			mobile_browser = Browser(mobile=True, account=currentAccount)
 			browser_instances.append(mobile_browser)
 			with mobile_browser as mobileBrowser:
@@ -275,11 +307,24 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 				Login(mobileBrowser).login()
 				if startingPoints is None:
 					startingPoints = utils.getAccountPoints()
+
+				# Record container activity after login
+				if container_keeper:
+					container_keeper.record_activity()
+
 				ReadToEarn(mobileBrowser).completeReadToEarn()
+
+				# Record activity after read to earn
+				if container_keeper:
+					container_keeper.record_activity()
+
 				if not completion_status.is_completed(currentAccount.email, "mobile_searches"):
 					with Searches(mobileBrowser) as searches:
 						searches.bingSearches()
 					completion_status.mark_completed(currentAccount.email, "mobile_searches")
+					# Record activity after searches
+					if container_keeper:
+						container_keeper.record_activity()
 				elif completion_status.is_completed(currentAccount.email, "mobile_searches"):
 					logging.info("[BING] Skipping mobile searches as they were already completed")
 
@@ -358,6 +403,11 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 		logging.error(f"Error during execution: {str(e)}")
 		raise
 	finally:
+
+		# Record container activity in finally block
+		if container_keeper:
+			container_keeper.record_activity()
+
 		# Ensure all browser instances are properly cleaned up
 		for browser in browser_instances:
 			try:

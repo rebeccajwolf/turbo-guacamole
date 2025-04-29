@@ -17,6 +17,7 @@ from selenium.common.exceptions import TimeoutException, ElementClickIntercepted
 
 from src.browser import Browser
 from src.utils import CONFIG, makeRequestsSession, getProjectRoot, active_sleep, take_screenshot
+from src.extended_wait import ExtendedWait
 
 
 class RetriesStrategy(Enum):
@@ -251,7 +252,7 @@ class Searches:
                 sleep(3)
                 
                 # Random delay between searches
-                sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+                ExtendedWait.sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max), self.browser)
 
                 self.random_scroll()
 

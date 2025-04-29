@@ -6,3 +6,4 @@ from .readToEarn import ReadToEarn
 from .searchesv2 import Searches
 from .exceptions import *
 from .browser_keeper import BrowserKeeper
+from .extended_wait import ExtendedWait

@@ -63,6 +63,7 @@ class Browser:
 			saveBrowserConfig(self.userDataDir, self.browserConfig)
 		self.webdriver = None
 		self.utils = None
+		self.browser_keeper = None
 		self.setup_browser()
 		logging.debug("out __init__")
 
@@ -77,6 +78,10 @@ class Browser:
 			self.webdriver = self.browserSetup(debug_port)
 			self._setup_cdp_listeners()
 			self.utils = Utils(self.webdriver)
+			
+			# Start browser keeper to maintain activity
+			self.browser_keeper = BrowserKeeper(self.webdriver)
+			self.browser_keeper.start()
 		except Exception as e:
 			logging.error(f"[BROWSER] Error setting up browser: {str(e)}")
 			self.cleanup()
@@ -223,6 +228,14 @@ class Browser:
 
 	def cleanup(self):
 		"""Clean up browser resources with proper process termination"""
+		# Stop the browser keeper first
+		if self.browser_keeper:
+			try:
+				self.browser_keeper.stop()
+			except Exception as e:
+				logging.error(f"Error stopping browser keeper: {str(e)}")
+			self.browser_keeper = None
+			
 		if self.webdriver:
 			try:
 				# Store current window handle

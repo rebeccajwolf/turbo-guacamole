@@ -1,144 +1,92 @@
 import logging
 import threading
-import queue
 import time
-from selenium.common.exceptions import WebDriverException, TimeoutException
-from selenium.webdriver.common.by import By
+import random
+from selenium.common.exceptions import WebDriverException
 
 class BrowserKeeper:
-	"""Keeps browser connection alive during long sleep periods by cycling through tabs and loading Reddit"""
-	
-	def __init__(self, browser):
-		self.browser = browser
-		self.webdriver = browser.webdriver
-		self._stop_event = threading.Event()
-		self._activity_thread = None
-		self._error_queue = queue.Queue()
-		self._original_handle = None
-		self._activity_handle = None
-		self._is_running = False
-		
-	def start(self):
-		"""Start the browser keeper thread"""
-		if self._is_running:
-			return
-			
-		self._stop_event.clear()
-		try:
-			# Store original handle
-			self._original_handle = self.webdriver.current_window_handle
-			self._is_running = True
-			
-			# Create activity tab with Reddit
-			self.webdriver.switch_to.new_window('tab')
-			self._activity_handle = self.webdriver.current_window_handle
-			self.webdriver.get("https://www.reddit.com/r/worldnews/new/")
-			
-			# Switch back to original tab
-			self.webdriver.switch_to.window(self._original_handle)
-			
-			self._activity_thread = threading.Thread(target=self._keep_alive_loop)
-			self._activity_thread.daemon = True
-			self._activity_thread.start()
-			
-		except Exception as e:
-			logging.debug(f"Failed to start browser keeper: {str(e)}")
-			self._is_running = False
-			self._cleanup_activity_tab()
-			raise
-		
-	def stop(self):
-		"""Stop the browser keeper thread and cleanup"""
-		if not self._is_running:
-			return
-			
-		self._stop_event.set()
-		self._is_running = False
-		
-		if self._activity_thread:
-			self._activity_thread.join(timeout=5)
-			self._activity_thread = None
-			
-		self._cleanup_activity_tab()
-		
-		try:
-			error = self._error_queue.get_nowait()
-			raise error
-		except queue.Empty:
-			pass
-			
-	def _cleanup_activity_tab(self):
-		"""Clean up the activity tab"""
-		try:
-			if self._activity_handle:
-				current = self.webdriver.current_window_handle
-				self.webdriver.switch_to.window(self._activity_handle)
-				self.webdriver.close()
-				if current != self._activity_handle:
-					self.webdriver.switch_to.window(current)
-				self._activity_handle = None
-		except Exception as e:
-			logging.debug(f"Error cleaning up activity tab: {str(e)}")
-			
-	def _cycle_through_tabs(self):
-		"""Cycle through all tabs and reload Reddit"""
-		try:
-			# Get all window handles
-			handles = self.webdriver.window_handles
-			current_handle = self.webdriver.current_window_handle
-			
-			# Cycle through each tab
-			for handle in handles:
-				try:
-					self.webdriver.switch_to.window(handle)
-					time.sleep(0.5)  # Small delay between tab switches
-				except Exception as e:
-					logging.debug(f"Error switching to tab {handle}: {str(e)}")
-					continue
-			
-			# Switch to Reddit tab and reload
-			if self._activity_handle in handles:
-				self.webdriver.switch_to.window(self._activity_handle)
-				self.webdriver.refresh()
-				time.sleep(1)  # Wait for reload
-			
-			# Return to original tab
-			if current_handle in handles:
-				self.webdriver.switch_to.window(current_handle)
-			
-			return True
-			
-		except Exception as e:
-			logging.debug(f"Tab cycling failed: {str(e)}")
-			return False
-			
-	def _keep_alive_loop(self):
-		"""Main loop that keeps the browser active by cycling through tabs"""
-		error_count = 0
-		max_errors = 3
-		cycle_interval = 10  # Cycle through tabs every 10 seconds
-		
-		while not self._stop_event.is_set() and error_count < max_errors:
-			try:
-				# Cycle through tabs
-				if not self._cycle_through_tabs():
-					error_count += 1
-					if error_count >= max_errors:
-						self._error_queue.put(WebDriverException("Failed to maintain connection"))
-						break
-				else:
-					error_count = 0
-				
-				# Sleep in shorter intervals to check stop event
-				for _ in range(cycle_interval * 2):
-					if self._stop_event.is_set():
-						break
-					time.sleep(0.5)
-				
-			except Exception as e:
-				error_count += 1
-				if error_count >= max_errors:
-					self._error_queue.put(e)
-					break
-				logging.debug(f"Handled error: {str(e)}")
-				time.sleep(1)
+    """
+    Class to keep browser sessions alive during long-running tasks.
+    Prevents container timeouts by maintaining activity.
+    """
+    
+    def __init__(self, webdriver, interval=30):
+        """
+        Initialize BrowserKeeper.
+        
+        Args:
+            webdriver: The webdriver instance to keep alive
+            interval: How often to perform the keepalive action (seconds)
+        """
+        self.webdriver = webdriver
+        self.interval = interval
+        self.stop_event = threading.Event()
+        self.thread = None
+        self.is_running = False
+        
+    def start(self):
+        """Start the keeper thread."""
+        if self.thread and self.thread.is_alive():
+            return
+            
+        self.stop_event.clear()
+        self.thread = threading.Thread(target=self._keeper_thread, daemon=True)
+        self.thread.start()
+        self.is_running = True
+        logging.debug("BrowserKeeper started")
+        
+    def stop(self):
+        """Stop the keeper thread."""
+        if self.thread and self.thread.is_alive():
+            self.stop_event.set()
+            self.thread.join(timeout=10)
+            self.is_running = False
+            logging.debug("BrowserKeeper stopped")
+            
+    def _keeper_thread(self):
+        """Background thread that performs periodic actions to keep the browser active."""
+        while not self.stop_event.is_set():
+            try:
+                # Wait for random time between 20-40 seconds
+                # This randomization helps avoid detection patterns
+                wait_time = random.uniform(20, 40)
+                if self.stop_event.wait(timeout=wait_time):
+                    break
+                    
+                # Only perform action if webdriver is still active
+                if self._is_driver_active():
+                    self._perform_keepalive_action()
+            except Exception as e:
+                logging.warning(f"Error in browser keeper thread: {str(e)}")
+                # If we encounter an error, wait a bit before trying again
+                time.sleep(5)
+                
+    def _is_driver_active(self):
+        """Check if the webdriver session is still active."""
+        try:
+            # Lightweight check to see if driver is responding
+            current_url = self.webdriver.current_url
+            return True
+        except (WebDriverException, AttributeError):
+            return False
+            
+    def _perform_keepalive_action(self):
+        """
+        Perform a small action to keep the browser active.
+        Uses minimal resources to avoid impacting performance.
+        """
+        try:
+            # Get the current URL to check connection
+            current_url = self.webdriver.current_url
+            
+            # Execute a lightweight JavaScript action
+            # This simulates user activity without changing page state
+            self.webdriver.execute_script("""
+                // Create minimal activity that doesn't affect page
+                let now = Date.now();
+                return now;
+            """)
+            
+            logging.debug(f"BrowserKeeper: Keepalive action performed on {current_url}")
+        except Exception as e:
+            logging.debug(f"BrowserKeeper: Failed to perform keepalive: {str(e)}")
