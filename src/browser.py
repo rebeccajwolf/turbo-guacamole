@@ -528,8 +528,8 @@ class Browser:
 		chrome_options.add_argument("--no-sandbox")
 		chrome_options.add_argument("--disable-gpu")
 		chrome_options.add_argument("--disable-dev-shm-usage")
-		driver = WebDriver(service=ChromeService(getProjectRoot() / "chromedriver"), options=chrome_options)
-		# driver = WebDriver(options=chrome_options)
+		# driver = WebDriver(service=ChromeService(getProjectRoot() / "chromedriver"), options=chrome_options)
+		driver = WebDriver(options=chrome_options)
 		version = driver.capabilities["browserVersion"]
 
 		driver.close()
