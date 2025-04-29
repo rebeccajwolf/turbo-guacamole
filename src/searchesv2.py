@@ -400,6 +400,7 @@ class Searches:
                   )
               except:
                   logging.error("[BING] Failed to return to search page after error")
+                  raise
           # For desktop, ensure we're back on the original window
           else:
               if original_window in self.webdriver.window_handles:
