@@ -303,22 +303,25 @@ class Activities:
 
 					
 				# Open the activity for the activity
-				cardId = activities.index(activity)
-				if "membercenter" in activity["name"].lower() or "exploreonbing" in activity["name"].lower():
-					offerId = activity["name"]
-				else:
-					offerId = activity["offerId"]
-				isDailySet = (
-					"daily_set_date" in activity["attributes"]
-					and activity["attributes"]["daily_set_date"]
+				# cardId = activities.index(activity)
+				# if "membercenter" in activity["name"].lower() or "exploreonbing" in activity["name"].lower():
+				# 	offerId = activity["name"]
+				# else:
+				# 	offerId = activity["offerId"]
+				# isDailySet = (
+				# 	"daily_set_date" in activity["attributes"]
+				# 	and activity["attributes"]["daily_set_date"]
+				# )
+
+
+				# if isDailySet:
+				# 	self.openDailySetActivity(cardId)
+				# else:
+				# 	self.openMorePromotionsActivity(offerId)
+				activityElement = self.browser.utils.waitUntilClickable(
+					By.XPATH, f'//*[contains(text(), "{activity["title"]}")]', timeToWait=20
 				)
-
-
-				if isDailySet:
-					self.openDailySetActivity(cardId)
-				else:
-					self.openMorePromotionsActivity(offerId)
-
+				self.browser.utils.click(activityElement)
 
 				sleep(7)
 				try:

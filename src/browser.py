@@ -450,7 +450,7 @@ class Browser:
 		options.add_argument("--disable-prompt-on-repost")
 		options.add_argument("--disable-domain-reliability")
 		options.add_argument("--disable-client-side-phishing-detection")
-		options.page_load_strategy = "eager"
+		options.page_load_strategy = "normal"
 
 		seleniumwireOptions: dict[str, Any] = {
 			"verify_ssl": False,

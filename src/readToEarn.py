@@ -71,7 +71,7 @@ class ReadToEarn:
 		json_data = {
 			"amount": 1,
 			"country": self.browser.localeGeo.lower(),
-			"id": 1,
+			"id": secrets.token_hex(64),
 			"type": 101,
 			"attributes": {
 				"offerid": "Gamification_Sapphire_DailyCheckIn",
