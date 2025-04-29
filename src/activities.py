@@ -356,13 +356,14 @@ class Activities:
 					# Default to completing search
 					self.completeSearch()
 			except Exception:
+				logging.debug(f"Error Occured while doing Activity, Retrying...")
 				retry_count += 1
 				if retry_count >= max_retries:
 					logging.error(f"[ACTIVITY] Error doing {activityTitle}", exc_info=True)
 				self.browser.utils.resetTabs()
 				continue
 			logging.debug(f"Entering Sleep after Activity")
-			sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
+			sleep(randint(300, 600))
 			logging.debug(f"Finished Sleep after Activity")
 			self.browser.utils.resetTabs()
 			break
