@@ -23,7 +23,7 @@ from selenium.webdriver import ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException, InvalidSessionIdException
-from urllib3.exceptions import ReadTimeoutError, MaxRetryError, NewConnectionError
+from urllib3.exceptions import ReadTimeoutError, MaxRetryError, NewConnectionError, TimeoutError
 
 from src import RemainingSearches
 from src.userAgentGenerator import GenerateUserAgent

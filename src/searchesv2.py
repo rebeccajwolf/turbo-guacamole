@@ -14,7 +14,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException
-from urllib3.exceptions import ReadTimeoutError, MaxRetryError, NewConnectionError
+from urllib3.exceptions import ReadTimeoutError, MaxRetryError, NewConnectionError, TimeoutError
 
 from src.browser import Browser
 from src.utils import CONFIG, makeRequestsSession, getProjectRoot, active_sleep, take_screenshot
@@ -193,7 +193,7 @@ class Searches:
                                 self.webdriver.refresh()
                                 sleep(5)  # Wait for refresh
                                 attempt = 0
-                    except (ReadTimeoutError):
+                    except (TimeoutException, ReadTimeoutError, TimeoutError):
                         raise
                     except Exception as e:
                         try:
@@ -221,7 +221,7 @@ class Searches:
                 return False
                 
             return True
-        except (ReadTimeoutError):
+        except (ReadTimeoutError, TimeoutError):
             raise
         except Exception as e:
             logging.error(f"[BING] Critical error during searches: {str(e)}", exc_info=True)
@@ -266,7 +266,7 @@ class Searches:
                     self.click_random_result()
 
                 return self.browser.utils.getAccountPoints()
-            except (ReadTimeoutError):
+            except (ReadTimeoutError, TimeoutError):
                 raise
             except TimeoutException:
                 if i == 10:
@@ -393,7 +393,7 @@ class Searches:
                     # Just scroll on current page
                     sleep(uniform(2, 3))
                     self.random_scroll()
-        except (ReadTimeoutError):
+        except (ReadTimeoutError, TimeoutError):
             raise
         except Exception as e:
             logging.warning(f"Error clicking random result: {str(e)}")
