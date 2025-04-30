@@ -257,7 +257,7 @@ class Searches:
                 sleep(3)
                 
                 # Random delay between searches
-                sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max), self.browser)
+                sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max))
 
                 self.random_scroll()
 
