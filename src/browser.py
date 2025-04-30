@@ -23,6 +23,7 @@ from selenium.webdriver import ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException, InvalidSessionIdException
+from urllib3.exceptions import ReadTimeoutError, MaxRetryError, NewConnectionError
 
 from src import RemainingSearches
 from src.userAgentGenerator import GenerateUserAgent
@@ -63,7 +64,7 @@ class Browser:
 			saveBrowserConfig(self.userDataDir, self.browserConfig)
 		self.webdriver = None
 		self.utils = None
-		self.browser_keeper = None
+		# self.browser_keeper = None
 		self.setup_browser()
 		logging.debug("out __init__")
 
@@ -80,8 +81,8 @@ class Browser:
 			self.utils = Utils(self.webdriver)
 			
 			# Start browser keeper to maintain activity
-			self.browser_keeper = BrowserKeeper(self.webdriver)
-			self.browser_keeper.start()
+			# self.browser_keeper = BrowserKeeper(self.webdriver)
+			# self.browser_keeper.start()
 		except Exception as e:
 			logging.error(f"[BROWSER] Error setting up browser: {str(e)}")
 			self.cleanup()
@@ -229,12 +230,12 @@ class Browser:
 	def cleanup(self):
 		"""Clean up browser resources with proper process termination"""
 		# Stop the browser keeper first
-		if self.browser_keeper:
-			try:
-				self.browser_keeper.stop()
-			except Exception as e:
-				logging.error(f"Error stopping browser keeper: {str(e)}")
-			self.browser_keeper = None
+		# if self.browser_keeper:
+		# 	try:
+		# 		self.browser_keeper.stop()
+		# 	except Exception as e:
+		# 		logging.error(f"Error stopping browser keeper: {str(e)}")
+		# 	self.browser_keeper = None
 			
 		if self.webdriver:
 			try:
@@ -251,14 +252,14 @@ class Browser:
 				# Switch back to main window and close it
 				self.webdriver.switch_to.window(current_handle)
 				self.webdriver.close()
-			except (InvalidSessionIdException, TimeoutError):
+				# Ensure webdriver is fully quit
+				self.webdriver.quit()
+			except (InvalidSessionIdException, TimeoutError, ReadTimeoutError):
 				pass
 			except Exception as e:
 				logging.error(f"Error during browser cleanup: {str(e)}")
 			finally:
 				try:
-					# Ensure webdriver is fully quit
-					self.webdriver.quit()
 					time.sleep(7)
 					# Kill any remaining chrome processes
 					self.kill_existing_chrome_processes()

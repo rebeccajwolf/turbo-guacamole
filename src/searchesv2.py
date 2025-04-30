@@ -14,6 +14,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException
+from urllib3.exceptions import ReadTimeoutError, MaxRetryError, NewConnectionError
 
 from src.browser import Browser
 from src.utils import CONFIG, makeRequestsSession, getProjectRoot, active_sleep, take_screenshot
@@ -145,82 +146,86 @@ class Searches:
         return relatedTerms
 
     def bingSearches(self, pointsCounter: int = 0) -> None:
-      logging.info(
+        logging.info(
             f"[BING] Starting {self.browser.browserType.capitalize()} Edge Bing searches..."
         )
-      self.browser.utils.goToSearch()
-      try:
-        numberOfSearches = self.browser.getRemainingSearches()
-        if (numberOfSearches == 0):
+        self.browser.utils.goToSearch()
+        try:
+            numberOfSearches = self.browser.getRemainingSearches()
+            if (numberOfSearches == 0):
+                logging.info(
+                    f"[BING] Finished {self.browser.browserType.capitalize()} Edge Bing searches !"
+                )
+                return True
+            if numberOfSearches > len(self.googleTrendsShelf):
+                # self.googleTrendsShelf.clear()  # Maybe needed?
+                logging.debug(
+                    f"google_trends before load = {list(self.googleTrendsShelf.items())}"
+                )
+                trends = self.getGoogleTrends(numberOfSearches)
+                shuffle(trends)
+                for trend in trends:
+                    self.googleTrendsShelf[trend] = None
+                logging.debug(
+                    f"google_trends after load = {list(self.googleTrendsShelf.items())}"
+                )
+                initial_points = self.browser.utils.getAccountPoints()
+                successful_searches = 0
+
+                i = 0
+                attempt = 0
+                for word in list(self.googleTrendsShelf.keys()):
+                    i += 1
+                    logging.info(f"[BING] Search {i}/{numberOfSearches}")
+                    try:
+                        current_points = self.bingSearch(word)
+                        # Check if points increased from the search
+                        if current_points > pointsCounter:
+                            successful_searches += 1
+                            pointsCounter = current_points
+                            attempt = 0  # Reset attempt counter on successful search
+                            logging.info(f"[BING] Successful search {successful_searches}/{numberOfSearches}")
+                            del self.googleTrendsShelf[list(self.googleTrendsShelf.keys())[0]]
+                        else:
+                            attempt += 1
+                            if attempt >= 2:
+                                logging.warning("[BING] Possible blockage. Refreshing the page.")
+                                self.webdriver.refresh()
+                                sleep(5)  # Wait for refresh
+                                attempt = 0
+                    except (ReadTimeoutError):
+                        raise
+                    except Exception as e:
+                        try:
+                            attempt += 1
+                            if attempt >= 2:
+                                logging.warning("[BING] Too many errors. Refreshing the page.")
+                                self.webdriver.refresh()
+                                sleep(5)
+                                attempt = 0
+                            continue
+                        except Exception as e:
+                            logging.warning(f"[BING] Error during search: {str(e)}")
+                            raise
+            # Log completion status
+            points_earned = pointsCounter - initial_points
             logging.info(
+                f"[BING] Completed {successful_searches}/{numberOfSearches} searches. "
+                f"[BING] Points earned through {self.browser.browserType.capitalize()} Searches: {points_earned}"
                 f"[BING] Finished {self.browser.browserType.capitalize()} Edge Bing searches !"
             )
-            return True
-        if numberOfSearches > len(self.googleTrendsShelf):
-          # self.googleTrendsShelf.clear()  # Maybe needed?
-          logging.debug(
-              f"google_trends before load = {list(self.googleTrendsShelf.items())}"
-          )
-          trends = self.getGoogleTrends(numberOfSearches)
-          shuffle(trends)
-          for trend in trends:
-              self.googleTrendsShelf[trend] = None
-          logging.debug(
-              f"google_trends after load = {list(self.googleTrendsShelf.items())}"
-          )
-        initial_points = self.browser.utils.getAccountPoints()
-        successful_searches = 0
-
-        i = 0
-        attempt = 0
-        for word in list(self.googleTrendsShelf.keys()):
-          i += 1
-          logging.info(f"[BING] Search {i}/{numberOfSearches}")
-          try:
-            current_points = self.bingSearch(word)
-            # Check if points increased from the search
-            if current_points > pointsCounter:
-                successful_searches += 1
-                pointsCounter = current_points
-                attempt = 0  # Reset attempt counter on successful search
-                logging.info(f"[BING] Successful search {successful_searches}/{numberOfSearches}")
-                del self.googleTrendsShelf[list(self.googleTrendsShelf.keys())[0]]
-            else:
-                attempt += 1
-                if attempt >= 2:
-                    logging.warning("[BING] Possible blockage. Refreshing the page.")
-                    self.webdriver.refresh()
-                    sleep(5)  # Wait for refresh
-                    attempt = 0
-          except Exception as e:
-              logging.warning(f"[BING] Error during search: {str(e)}")
-              attempt += 1
-              if attempt >= 2:
-                  logging.warning("[BING] Too many errors. Refreshing the page.")
-                  self.webdriver.refresh()
-                  sleep(5)
-                  attempt = 0
-              continue
-
-          
-        # Log completion status
-        points_earned = pointsCounter - initial_points
-        logging.info(
-            f"[BING] Completed {successful_searches}/{numberOfSearches} searches. "
-            f"[BING] Points earned through {self.browser.browserType.capitalize()} Searches: {points_earned}"
-            f"[BING] Finished {self.browser.browserType.capitalize()} Edge Bing searches !"
-        )
-        
-        # Return false if we didn't complete all searches
-        if successful_searches < numberOfSearches:
-            logging.warning(f"[BING] Only completed {successful_searches} out of {numberOfSearches} searches")
-            return False
             
-        return True
-
-      except Exception as e:
-          logging.error(f"[BING] Critical error during searches: {str(e)}", exc_info=True)
-          return False
+            # Return false if we didn't complete all searches
+            if successful_searches < numberOfSearches:
+                logging.warning(f"[BING] Only completed {successful_searches} out of {numberOfSearches} searches")
+                return False
+                
+            return True
+        except (ReadTimeoutError):
+            raise
+        except Exception as e:
+            logging.error(f"[BING] Critical error during searches: {str(e)}", exc_info=True)
+            raise
 
 
     def bingSearch(self, word: str):
@@ -252,7 +257,7 @@ class Searches:
                 sleep(3)
                 
                 # Random delay between searches
-                ExtendedWait.sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max), self.browser)
+                sleep(randint(CONFIG.cooldown.min, CONFIG.cooldown.max), self.browser)
 
                 self.random_scroll()
 
@@ -261,25 +266,26 @@ class Searches:
                     self.click_random_result()
 
                 return self.browser.utils.getAccountPoints()
+            except (ReadTimeoutError):
+                raise
             except TimeoutException:
                 if i == 10:
                     logging.error(
                         "[BING] "
-                        + "Cancelling mobile searches due to too many retries."
+                        + "Cancelling searches due to too many retries."
                     )
-                    return self.browser.utils.getAccountPoints()
+                    raise
                 self.browser.utils.tryDismissAllMessages()
                 logging.error("[BING] " + "Timeout, retrying in 5~ seconds...")
                 sleep(randint(7, 15))
                 i += 1
                 continue
             except Exception as e:
-                logging.error(f"[BING] Error during search: {str(e)}")
                 sleep(randint(5, 10))
                 i += 1
                 if i >= 10:
-                    logging.error("[BING] Too many errors, returning current points")
-                    return self.browser.utils.getAccountPoints()
+                    logging.error(f"[BING] Error during search: {str(e)}")
+                    raise
                 continue
 
     def random_scroll(self):
@@ -302,110 +308,110 @@ class Searches:
             logging.warning(f"Error during random scroll: {str(e)}")
 
     def click_random_result(self):
-      """Click a random search result link with mobile/desktop handling"""
-      try:
-          logging.debug(f'[BING] Doing Random link clicking...')
-          
-          # Store original window handle
-          original_window = self.webdriver.current_window_handle
-          
-          # Handle "Continue on Edge" popup
-          self.close_continue_popup()
-          
-          # Different selectors for mobile and desktop
-          selector = "#b_results .b_algoheader a h2" if self.browser.mobile else "#b_results .b_algo h2 a"
-          
-          # Find all search result links
-          results = self.webdriver.find_elements(By.CSS_SELECTOR, selector)
-          if not results:
-              return
-          
-          # Select random result
-          random_result = choice(results)
-          
-          try:
-              # Scroll element into view
-              self.webdriver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", random_result)
-              sleep(1)  # Wait for scroll
-              
-              # Try regular click first
-              random_result.click()
-          except ElementClickInterceptedException:
-              try:
-                  # Try JavaScript click if regular click fails
-                  self.webdriver.execute_script("arguments[0].click();", random_result)
-              except Exception as e:
-                  logging.warning(f"JavaScript click failed: {str(e)}")
-                  return
-          
-          # Wait for page load
-          sleep(2)
-          
-          if self.browser.mobile:
-              # Mobile: Stay on same page, just scroll
-              logging.debug(f"[BING] Mobile Link: {self.webdriver.title}")
-              sleep(uniform(2, 3))
-              self.random_scroll()
-              
-              # Return to search page using back button
-              sleep(uniform(1, 2))
-              logging.debug("[BING] Returning to search page")
-              self.webdriver.back()
-              
-              # Wait for search results to be visible again
-              try:
-                  WebDriverWait(self.webdriver, 20).until(
-                      EC.presence_of_element_located((By.CSS_SELECTOR, "#b_results"))
-                  )
-              except TimeoutException:
-                  logging.warning("[BING] Timeout waiting for search results after back navigation")
-                  # Refresh if results don't load
-                  self.webdriver.refresh()
-              
-          else:
-              # Desktop: Handle new window if opened
-              new_window = None
-              try:
-                  WebDriverWait(self.webdriver, 3).until(lambda d: len(d.window_handles) > 1)
-                  new_window = [h for h in self.webdriver.window_handles if h != original_window][0]
-              except TimeoutException:
-                  pass
+        """Click a random search result link with mobile/desktop handling"""
+        try:
+            logging.debug(f'[BING] Doing Random link clicking...')
+            
+            # Store original window handle
+            original_window = self.webdriver.current_window_handle
+            
+            # Handle "Continue on Edge" popup
+            self.close_continue_popup()
+            
+            # Different selectors for mobile and desktop
+            selector = "#b_results .b_algoheader a h2" if self.browser.mobile else "#b_results .b_algo h2 a"
+            
+            # Find all search result links
+            results = self.webdriver.find_elements(By.CSS_SELECTOR, selector)
+            if not results:
+                return
+            
+            # Select random result
+            random_result = choice(results)
+            
+            try:
+                # Scroll element into view
+                self.webdriver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", random_result)
+                sleep(1)  # Wait for scroll
+                
+                # Try regular click first
+                random_result.click()
+            except ElementClickInterceptedException:
+                try:
+                    # Try JavaScript click if regular click fails
+                    self.webdriver.execute_script("arguments[0].click();", random_result)
+                except Exception as e:
+                    logging.warning(f"JavaScript click failed: {str(e)}")
+                    return
+            
+            # Wait for page load
+            sleep(2)
+            
+            if self.browser.mobile:
+                # Mobile: Stay on same page, just scroll
+                logging.debug(f"[BING] Mobile Link: {self.webdriver.title}")
+                sleep(uniform(2, 3))
+                self.random_scroll()
+                
+                # Return to search page using back button
+                sleep(uniform(1, 2))
+                logging.debug("[BING] Returning to search page")
+                self.webdriver.back()
+                
+                # Wait for search results to be visible again
+                try:
+                    WebDriverWait(self.webdriver, 20).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "#b_results"))
+                    )
+                except TimeoutException:
+                    logging.warning("[BING] Timeout waiting for search results after back navigation")
+                    # Refresh if results don't load
+                    self.webdriver.refresh()   
+            else:
+                # Desktop: Handle new window if opened
+                new_window = None
+                try:
+                    WebDriverWait(self.webdriver, 3).until(lambda d: len(d.window_handles) > 1)
+                    new_window = [h for h in self.webdriver.window_handles if h != original_window][0]
+                except TimeoutException:
+                    pass
 
-              if new_window:
-                  # Switch to new window
-                  self.webdriver.switch_to.window(new_window)
-                  
-                  logging.debug(f"[BING] Desktop Link Tab: {self.webdriver.title}")
+                if new_window:
+                    # Switch to new window
+                    self.webdriver.switch_to.window(new_window)
+                    
+                    logging.debug(f"[BING] Desktop Link Tab: {self.webdriver.title}")
 
-                  # Wait for page load and scroll
-                  sleep(uniform(3, 5))
-                  self.random_scroll()
-                  
-                  # Close tab and switch back
-                  self.webdriver.close()
-                  self.webdriver.switch_to.window(original_window)
-              else:
-                  # Just scroll on current page
-                  sleep(uniform(2, 3))
-                  self.random_scroll()
-          
-      except Exception as e:
-          logging.warning(f"Error clicking random result: {str(e)}")
-          # For mobile, ensure we return to search page on error
-          if self.browser.mobile:
-              try:
-                  self.webdriver.back()
-                  # Wait for search results after error recovery
-                  WebDriverWait(self.webdriver, 10).until(
-                      EC.presence_of_element_located((By.CSS_SELECTOR, "#b_results"))
-                  )
-              except:
-                  logging.error("[BING] Failed to return to search page after error")
-                  raise
-          # For desktop, ensure we're back on the original window
-          else:
-              if original_window in self.webdriver.window_handles:
-                  self.webdriver.switch_to.window(original_window)
+                    # Wait for page load and scroll
+                    sleep(uniform(3, 5))
+                    self.random_scroll()
+                    
+                    # Close tab and switch back
+                    self.webdriver.close()
+                    self.webdriver.switch_to.window(original_window)
+                else:
+                    # Just scroll on current page
+                    sleep(uniform(2, 3))
+                    self.random_scroll()
+        except (ReadTimeoutError):
+            raise
+        except Exception as e:
+            logging.warning(f"Error clicking random result: {str(e)}")
+            # For mobile, ensure we return to search page on error
+            if self.browser.mobile:
+                try:
+                    self.webdriver.back()
+                    # Wait for search results after error recovery
+                    WebDriverWait(self.webdriver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "#b_results"))
+                    )
+                except:
+                    logging.error("[BING] Failed to return to search page after error")
+                    raise
+            # For desktop, ensure we're back on the original window
+            else:
+                if original_window in self.webdriver.window_handles:
+                    self.webdriver.switch_to.window(original_window)
 
 
     def close_continue_popup(self):
