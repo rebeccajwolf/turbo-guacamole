@@ -90,6 +90,7 @@ class Activities:
 						logging.debug(f"Finished Poll Quiz...")
 						res = False
 					sleep(3)
+				return
 			except:
 				if self.browser.utils.isElementExists(By.XPATH, '//*[@class="bt_headerMessage"]') or self.browser.utils.isElementExists(By.XPATH, '//*[@class="cico bt_pocheckmark"]'):
 						logging.debug(f"Finished Poll Quiz...")
@@ -300,7 +301,20 @@ class Activities:
 				if activityTitle in CONFIG.activities.ignore:
 					logging.debug(f"Ignoring {activityTitle}")
 					return
-
+				# Open the activity for the activity
+				if "puzzle" in activityTitle.lower():
+					logging.info(f"Skipping {activityTitle} because it's not supported")
+					return
+				if "Windows search" == activityTitle:
+					# for search in {"what time is it in dublin", "what is the weather"}:
+					#     pyautogui.press("win")
+					#     sleep(1)
+					#     pyautogui.write(search)
+					#     sleep(5)
+					#     pyautogui.press("enter")
+					#     sleep(5)
+					# pyautogui.hotkey("alt", "f4") # Close Edge
+					return
 					
 				# Open the activity for the activity
 				# cardId = activities.index(activity)
