@@ -1,7 +1,7 @@
 import logging
 import time
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class ExtendedWait:
     """
@@ -26,7 +26,7 @@ class ExtendedWait:
             
         # For longer waits, break it into chunks and keep activity
         start_time = datetime.now()
-        end_time = start_time + seconds * time.timedelta(seconds=1)
+        end_time = start_time + seconds * timedelta(seconds=1)
         
         chunk_size = min(30, seconds)  # Maximum 30 second chunks
         remaining = seconds
