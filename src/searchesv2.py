@@ -207,20 +207,20 @@ class Searches:
                         except Exception as e:
                             logging.warning(f"[BING] Error during search: {str(e)}")
                             raise
-            # Log completion status
-            points_earned = pointsCounter - initial_points
-            logging.info(
-                f"[BING] Completed {successful_searches}/{numberOfSearches} searches. "
-                f"[BING] Points earned through {self.browser.browserType.capitalize()} Searches: {points_earned}"
-                f"[BING] Finished {self.browser.browserType.capitalize()} Edge Bing searches !"
-            )
-            
-            # Return false if we didn't complete all searches
-            if successful_searches < numberOfSearches:
-                logging.warning(f"[BING] Only completed {successful_searches} out of {numberOfSearches} searches")
-                return False
+                # Log completion status
+                points_earned = pointsCounter - initial_points
+                logging.info(
+                    f"[BING] Completed {successful_searches}/{numberOfSearches} searches. "
+                    f"[BING] Points earned through {self.browser.browserType.capitalize()} Searches: {points_earned}"
+                    f"[BING] Finished {self.browser.browserType.capitalize()} Edge Bing searches !"
+                )
                 
-            return True
+                # Return false if we didn't complete all searches
+                if successful_searches < numberOfSearches:
+                    logging.warning(f"[BING] Only completed {successful_searches} out of {numberOfSearches} searches")
+                    return False
+                
+                return True
         except (ReadTimeoutError, TimeoutError):
             raise
         except Exception as e:
