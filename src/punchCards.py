@@ -66,12 +66,26 @@ class PunchCards:
 		#         self.webdriver.refresh()
 		#         time.sleep(10)
 		#         self.waitUntilVisible(By.ID, 'rewards-dashboard-punchcard-details', 30)
-		incomplete_offers = self.webdriver.find_elements(By.XPATH, '//a[@class= "offer-cta"]/child::div[contains(@class, "btn-primary")]')
-		for _ in range(len(incomplete_offers)):
-			self.browser.utils.waitUntilClickable(By.XPATH, '//a[@class= "offer-cta"]/child::div[contains(@class, "btn-primary")]', 15)
-			button = self.webdriver.find_element(By.XPATH, "//a[@class='offer-cta']/div")
+		# incomplete_offers = self.webdriver.find_elements(By.XPATH, '//a[@class= "offer-cta"]/child::div[contains(@class, "btn-primary")]')
+		# for _ in range(len(incomplete_offers)):
+		# 	self.browser.utils.waitUntilClickable(By.XPATH, '//a[@class= "offer-cta"]/child::div[contains(@class, "btn-primary")]', 15)
+		# 	button = self.webdriver.find_element(By.XPATH, "//a[@class='offer-cta']/div")
+		# 	time.sleep(3)
+		# 	self.browser.utils.click(button)
+		# 	time.sleep(2)
+		# 	self.browser.utils.switchToNewTab(timeToWait=20)
+		# 	time.sleep(2)
+		# 	self.doPunchCard()
+		# 	time.sleep(2)
+		# 	if self.webdriver.current_url == url:
+		# 		self.webdriver.refresh()
+		# 		self.browser.utils.waitUntilVisible(By.ID, 'rewards-dashboard-punchcard-details', 30)
+		# 	time.sleep(random.randint(100, 700) / 100)
+		for child in childPromotions:
+			self.browser.utils.waitUntilClickable(By.XPATH, f'//a[@class="offer-cta" and contains(@href, "{child["offerId"]}")]/div', 15)
+			button = self.webdriver.find_element(By.XPATH, f'//a[@class="offer-cta" and contains(@href, "{child["offerId"]}")]/div')
 			time.sleep(3)
-			self.browser.utils.mouseClick(button)
+			self.browser.utils.click(button)
 			time.sleep(2)
 			self.browser.utils.switchToNewTab(timeToWait=20)
 			time.sleep(2)
@@ -81,6 +95,7 @@ class PunchCards:
 				self.webdriver.refresh()
 				self.browser.utils.waitUntilVisible(By.ID, 'rewards-dashboard-punchcard-details', 30)
 			time.sleep(random.randint(100, 700) / 100)
+
 
 	def doPunchCard(self):
 		if self.browser.utils.isElementExists(By.ID, 'rqStartQuiz'):
