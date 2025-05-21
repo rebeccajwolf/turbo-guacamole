@@ -93,7 +93,10 @@ class PunchCards:
 			self.doPunchCard()
 			time.sleep(2)
 			self.browser.utils.closeAllButMain()
-			self.webdriver.refresh()
+			if self.webdriver.current_url != url:
+				self.webdriver.get(url)
+			else:
+				self.webdriver.refresh()
 			self.browser.utils.waitUntilVisible(By.ID, 'rewards-dashboard-punchcard-details', 30)
 			time.sleep(random.randint(100, 700) / 100)
 			logging.debug(f"[PUNCH CARDS] Finished doing Punch Card Activity: {child['title']}...")
