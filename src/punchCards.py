@@ -89,12 +89,14 @@ class PunchCards:
 			time.sleep(2)
 			self.browser.utils.switchToNewTab(timeToWait=20)
 			time.sleep(2)
+			logging.debug(f"Doing Punch Card Activity: {child['title']}...")
 			self.doPunchCard()
 			time.sleep(2)
 			if self.webdriver.current_url == url:
 				self.webdriver.refresh()
 				self.browser.utils.waitUntilVisible(By.ID, 'rewards-dashboard-punchcard-details', 30)
 			time.sleep(random.randint(100, 700) / 100)
+			logging.debug(f"Finished doing Punch Card Activity: {child['title']}...")
 
 
 	def doPunchCard(self):
