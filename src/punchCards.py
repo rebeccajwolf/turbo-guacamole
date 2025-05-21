@@ -89,14 +89,14 @@ class PunchCards:
 			time.sleep(2)
 			self.browser.utils.goToLatestWindow(timeToWait=20)
 			time.sleep(2)
-			logging.debug(f"Doing Punch Card Activity: {child['title']}...")
+			logging.debug(f"[PUNCH CARDS] Doing Punch Card Activity: {child['title']}...")
 			self.doPunchCard()
 			time.sleep(2)
 			self.browser.utils.closeAllButMain()
 			self.webdriver.refresh()
 			self.browser.utils.waitUntilVisible(By.ID, 'rewards-dashboard-punchcard-details', 30)
 			time.sleep(random.randint(100, 700) / 100)
-			logging.debug(f"Finished doing Punch Card Activity: {child['title']}...")
+			logging.debug(f"[PUNCH CARDS] Finished doing Punch Card Activity: {child['title']}...")
 
 
 	def doPunchCard(self):
@@ -123,7 +123,7 @@ class PunchCards:
 				time.sleep(random.randint(100, 700) / 100)
 		else:
 			time.sleep(5)
-			self.browser.utils.closeCurrentTab()
+			self.browser.utils.closeAllButMain()
 			time.sleep(5)
 
 	

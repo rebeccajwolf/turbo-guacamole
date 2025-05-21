@@ -124,7 +124,7 @@ class Login:
 		emailField.send_keys(self.browser.email)
 		assert emailField.get_attribute("value") == self.browser.email
 		# self.utils.waitUntilClickable(By.ID, "idSIButton9").click()
-		self.utils.waitUntilClickable(By.XPATH, "//button[@type='submit']").click()
+		self.utils.waitUntilClickable(By.XPATH, '//button[@type="submit" and contains(text(), "Next")]').click()
 
 		# Passwordless check
 		isPasswordless = False
@@ -153,7 +153,7 @@ class Login:
 			passwordField.send_keys(self.browser.password)
 			assert passwordField.get_attribute("value") == self.browser.password
 			# self.utils.waitUntilClickable(By.ID, "idSIButton9").click()
-			self.utils.waitUntilClickable(By.XPATH, "//button[@type='submit']").click()
+			self.utils.waitUntilClickable(By.XPATH, '//button[@type="submit" and contains(text(), "Next")]').click()
 
 			# Check if 2FA is enabled, both device auth and TOTP are supported
 			isDeviceAuthEnabled = False
