@@ -718,6 +718,20 @@ class Utils:
 		self.webdriver.switch_to.window(self.webdriver.window_handles[-1])
 		if timeToWait > 0:
 				time.sleep(timeToWait)
+	
+	def closeAllButMain(self):
+		"""
+		Closes all other windows and switches focus back to main window
+		:return: None
+		"""
+		try:
+			if len(self.webdriver.window_handles) == 1:
+				return
+			for _ in range(len(self.webdriver.window_handles)-1):
+				self.webdriver.switch_to.window(self.webdriver.window_handles[-1])
+				self.webdriver.close()
+		finally:
+			self.webdriver.switch_to.window(self.webdriver.window_handles[0])
 
 	def closeCurrentTab(self) -> None:
 		self.webdriver.close()
