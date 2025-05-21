@@ -4,6 +4,7 @@ import time
 import urllib.parse
 
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException, InvalidSessionIdException
 
 from src.browser import Browser
 from .constants import REWARDS_URL
@@ -149,6 +150,8 @@ class PunchCards:
 						punchCard["parentPromotion"]["attributes"]["destination"],
 						punchCard["childPromotions"],
 					)
+			except (InvalidSessionIdException):
+				raise
 			except Exception:  # pylint: disable=broad-except
 				logging.error("[PUNCH CARDS] Error Punch Cards", exc_info=True)
 				self.browser.utils.resetTabs()
