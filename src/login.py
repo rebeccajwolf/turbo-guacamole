@@ -53,7 +53,7 @@ class Login:
 				if button.is_enabled() and button.is_displayed():
 					logging.debug(f"Button {index + 1}: {button.text}")
 					if "Yes" in button.text:
-						logging.info("[Login] Setting Auto Login Preference")
+						logging.info("[LOGIN] Setting Auto Login Preference")
 						button.click()
 		except:
 			pass
@@ -65,7 +65,7 @@ class Login:
 				if button.is_enabled() and button.is_displayed():
 					logging.debug(f"Button {index + 1}: {button.text}")
 					if "Skip" in button.text:
-						logging.info("[Login] Setting Auto Login Preference")
+						logging.info("[LOGIN] Setting Auto Login Preference")
 						button.click()
 		except:
 			pass
@@ -146,6 +146,10 @@ class Login:
 			self.utils.waitUntilVisible(By.NAME, "kmsiForm", 60)
 			logging.info("[LOGIN] Successfully verified!")
 		else:
+			isUsePassword = self.webdriver.find_element(By.XPATH, '//span[@role="button" and contains(text(), "password")]')
+			if isUsePassword.is_enabled() and isUsePassword.is_displayed():
+				logging.info("[LOGIN] Setting Login to Use Password...")
+				isUsePassword.click()
 			# Password-based login, enter password from accounts.json
 			passwordField = self.utils.waitUntilClickable(By.NAME, "passwd")
 			logging.info("[LOGIN] Entering password...")
