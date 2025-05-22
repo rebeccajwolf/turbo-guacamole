@@ -413,7 +413,7 @@ class Browser:
             f"--remote-debugging-port={debug_port}"
         )  # Use specific debugging port
 		options.add_argument(f"--lang={self.localeLang}")
-		# options.add_argument(f"--user-data-dir={self.userDataDir.as_posix()}")
+		options.add_argument(f"--user-data-dir={self.userDataDir.as_posix()}")
 		options.add_argument("--log-level=3")
 		# options.add_argument(
 		# 		"--blink-settings=imagesEnabled=false"

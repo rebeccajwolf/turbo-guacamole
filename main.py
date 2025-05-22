@@ -246,6 +246,7 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 				logging.info(
 					f"[POINTS] You have {formatNumber(startingPoints)} points on your account"
 				)
+				todaysPoints = completion_status.update_points(currentAccount.email, startingPoints)
 
 				# Record container activity after login
 				# if container_keeper:
@@ -337,7 +338,7 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 				accountPoints = utils.getAccountPoints()
 
 		logging.info(
-			f"[POINTS] You have earned {formatNumber(accountPoints - startingPoints)} points this run !"
+			f"[POINTS] You have earned {formatNumber(accountPoints - todaysPoints)} points this run !"
 		)
 		logging.info(f"[POINTS] You are now at {formatNumber(accountPoints)} points !")
 		appriseSummary = AppriseSummary[CONFIG.apprise.summary]
@@ -358,7 +359,7 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 				"\n".join(
 					[
 						f"👤 Account: {currentAccount.email}",
-						f"⭐️ Points earned today: {formatNumber(accountPoints - startingPoints)}",
+						f"⭐️ Points earned today: {formatNumber(accountPoints - todaysPoints)}",
 						f"💰 Total points: {formatNumber(accountPoints)}",
 						goalStatus,
 					]
