@@ -246,7 +246,8 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 				logging.info(
 					f"[POINTS] You have {formatNumber(startingPoints)} points on your account"
 				)
-				todaysPoints = completion_status.update_points(currentAccount.email, startingPoints)
+				completion_status.update_points(currentAccount.email, startingPoints)
+				todaysPoints = completion_status.get_points(currentAccount.email)
 
 				# Record container activity after login
 				# if container_keeper:
