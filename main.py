@@ -254,44 +254,44 @@ def executeBot(currentAccount, completion_status: CompletionStatus):
 				# 	container_keeper.record_activity()
 
 				# Only complete daily set if not already done
-				if not completion_status.is_completed(currentAccount.email, "promotions"):
-					Activities(desktopBrowser).completeActivities()
-					completion_status.mark_completed(currentAccount.email, "promotions")
-					# Record activity after completion
-					# if container_keeper:
-					# 	container_keeper.record_activity()
-				else:
-					logging.info("[Promotions] Skipping as it was already completed")
+				# if not completion_status.is_completed(currentAccount.email, "promotions"):
+				# 	Activities(desktopBrowser).completeActivities()
+				# 	completion_status.mark_completed(currentAccount.email, "promotions")
+				# 	# Record activity after completion
+				# 	# if container_keeper:
+				# 	# 	container_keeper.record_activity()
+				# else:
+				# 	logging.info("[Promotions] Skipping as it was already completed")
 
-				# Only complete punch cards if not already done
-				if not completion_status.is_completed(currentAccount.email, "punch_cards"):
-					PunchCards(desktopBrowser).completePunchCards()
-					completion_status.mark_completed(currentAccount.email, "punch_cards")
-					# Record activity after completion
-					# if container_keeper:
-					# 	container_keeper.record_activity()
-				else:
-					logging.info("[PUNCH CARDS] Skipping as it was already completed")
-				# VersusGame(desktopBrowser).completeVersusGame()
-
-
-				if not completion_status.is_completed(currentAccount.email, "desktop_searches"):
-					with Searches(desktopBrowser) as searches:
-						searches.bingSearches()
-					completion_status.mark_completed(currentAccount.email, "desktop_searches")
-					# Record activity after searches
-					# if container_keeper:
-					# 	container_keeper.record_activity()
-				elif completion_status.is_completed(currentAccount.email, "desktop_searches"):
-					logging.info("[BING] Skipping desktop searches as they were already completed")
+				# # Only complete punch cards if not already done
+				# if not completion_status.is_completed(currentAccount.email, "punch_cards"):
+				# 	PunchCards(desktopBrowser).completePunchCards()
+				# 	completion_status.mark_completed(currentAccount.email, "punch_cards")
+				# 	# Record activity after completion
+				# 	# if container_keeper:
+				# 	# 	container_keeper.record_activity()
+				# else:
+				# 	logging.info("[PUNCH CARDS] Skipping as it was already completed")
+				# # VersusGame(desktopBrowser).completeVersusGame()
 
 
-				goalPoints = utils.getGoalPoints()
-				goalTitle = utils.getGoalTitle()
+				# if not completion_status.is_completed(currentAccount.email, "desktop_searches"):
+				# 	with Searches(desktopBrowser) as searches:
+				# 		searches.bingSearches()
+				# 	completion_status.mark_completed(currentAccount.email, "desktop_searches")
+				# 	# Record activity after searches
+				# 	# if container_keeper:
+				# 	# 	container_keeper.record_activity()
+				# elif completion_status.is_completed(currentAccount.email, "desktop_searches"):
+				# 	logging.info("[BING] Skipping desktop searches as they were already completed")
 
-				remainingSearches = desktopBrowser.getRemainingSearches(
-					desktopAndMobile=True
-				)
+
+				# goalPoints = utils.getGoalPoints()
+				# goalTitle = utils.getGoalTitle()
+
+				# remainingSearches = desktopBrowser.getRemainingSearches(
+				# 	desktopAndMobile=True
+				# )
 				accountPoints = utils.getAccountPoints()
 
 		if CONFIG.search.type in ("mobile", "both", None):

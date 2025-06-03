@@ -37,6 +37,7 @@ from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 from urllib3 import Retry
@@ -718,6 +719,10 @@ class Utils:
 		self.webdriver.switch_to.window(self.webdriver.window_handles[-1])
 		if timeToWait > 0:
 				time.sleep(timeToWait)
+	
+	def stopLoading(self):
+		action = ActionChains(self.webdriver)
+		action.send_keys(Keys.ESCAPE).perform()
 	
 	def closeAllButMain(self):
 		"""
