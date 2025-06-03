@@ -211,7 +211,7 @@ class Browser:
 		# Look for existing profile for this email
 		existing_profile = None
 		for profile_dir in sessionsDir.iterdir():
-			if profile_dir.is_dir() and profile_dir.name.startswith(f"{self.email}_"):
+			if profile_dir.is_dir() and profile_dir.name.startswith(f"{self.email}_{"mobile" if self.mobile else "desktop"}"):
 				existing_profile = profile_dir
 				break
 
@@ -220,7 +220,7 @@ class Browser:
 			return existing_profile
 
 		# Create new profile if none exists
-		sessionid = f"{self.email}_{int(time.time())}"
+		sessionid = f"{self.email}_{"mobile" if self.mobile else "desktop"}{int(time.time())}"
 		userSessionDir = sessionsDir / sessionid
 		userSessionDir.mkdir(parents=True, exist_ok=True)
 		logging.info(f"Created new profile: {sessionid}")
