@@ -48,10 +48,11 @@ class ReadToEarn:
 		authorization_url, state = mobileApp.authorization_url(
 			authorization_base_url, access_type="offline_access", login_hint=accountName
 		)
+		self.webdriver.get(authorization_url)
 		# Get Referer URL from webdriver
 		while True:
-			self.webdriver.get(authorization_url)
-			time.sleep(77)
+			self.webdriver.refresh()
+			time.sleep(120)
 			logging.info("[READ TO EARN] Waiting for Login")
 			if (
 				self.webdriver.current_url[:48]
