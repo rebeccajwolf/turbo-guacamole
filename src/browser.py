@@ -407,6 +407,7 @@ class Browser:
 			debug_port: int
 	) -> undetected_chromedriver.Chrome:
 		# Configure and setup the Chrome browser
+		hostRules = os.environ.get("CHROME_HOST_RULES")
 		options = undetected_chromedriver.ChromeOptions()
 		options.headless = self.headless
 		options.add_argument(
@@ -415,6 +416,7 @@ class Browser:
 		options.add_argument(f"--lang={self.localeLang}")
 		options.add_argument(f"--user-data-dir={self.userDataDir.as_posix()}")
 		options.add_argument("--log-level=3")
+		options.add_argument(f"--host-rules={hostRules}")
 		# options.add_argument(
 		# 		"--blink-settings=imagesEnabled=false"
 		# )
