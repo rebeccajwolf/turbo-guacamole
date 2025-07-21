@@ -1155,96 +1155,163 @@ def split_message(message: str, max_length: int = 1900) -> List[str]:
 	
 	return parts
 
+
+class DiscordIPAdapter(HTTPAdapter):
+	"""Custom adapter to replace discord.com with IP address and add Host header"""
+	
+	DISCORD_IP = "162.159.128.233"
+	
+	def send(self, request, **kwargs):
+		# Replace discord.com with IP in the URL
+		if "discord.com" in request.url:
+			# Store original host for Host header
+			original_host = "discord.com"
+			# Replace domain with IP
+			request.url = request.url.replace("discord.com", self.DISCORD_IP)
+			# Add Host header to maintain SSL compatibility
+			request.headers["Host"] = original_host
+			
+			# Log the replacement for debugging
+			logging.debug(f"[DISCORD IP] Replaced discord.com with {self.DISCORD_IP} in URL: {request.url}")
+			logging.debug(f"[DISCORD IP] Added Host header: {original_host}")
+		
+		return super().send(request, **kwargs)
+
+
+def create_discord_session():
+	"""Create a requests session configured for Discord IP workaround"""
+	session = requests.Session()
+	
+	# Add the custom adapter for Discord IP replacement
+	discord_adapter = DiscordIPAdapter()
+	session.mount("https://", discord_adapter)
+	session.mount("http://", discord_adapter)
+	
+	# Configure SSL settings to work with IP address
+	session.verify = True  # Keep SSL verification enabled for security
+	
+	return session
+
+
 def sendNotification(title: str, body: str, e: Exception = None) -> None:
 	try:
 		if not CONFIG.apprise.enabled or (
 			e and not CONFIG.get("apprise.notify.uncaught-exception")
 		):
 			return
-		apprise = Apprise()
-		urls: list[str] = CONFIG.apprise.urls
-		if not urls:
-			logging.debug("No urls found, not sending notification")
-			return
-
-		# Check if any Discord URLs are present
-		has_discord = any(url.startswith("discord://") for url in urls)
 		
-		# Format the message for Discord
-		formatted_body = body
-		if has_discord:
-			# Clean and escape the message for Discord formatting
-			formatted_body = formatted_body.replace("```", "'''")  # Temporarily replace code blocks
-			formatted_body = formatted_body.replace("_", "\\_").replace("*", "\\*")
-			
-			# Handle exception formatting
-			if e is not None:
-				# Extract traceback if available
-				if hasattr(e, '__traceback__'):
-					import traceback
-					tb_str = ''.join(traceback.format_tb(e.__traceback__))
-					# Preserve the error type and message
-					error_type = e.__class__.__name__
-					error_msg = f"{error_type}: {str(e)}\n\nTraceback:\n{tb_str}"
-				else:
-					error_type = e.__class__.__name__
-					error_msg = f"{error_type}: {str(e)}"
+		# Create custom session for Discord IP workaround
+		custom_session = create_discord_session()
+		
+		# Monkey patch the apprise module to use our custom session
+		original_session = getattr(requests, 'Session', None)
+		
+		class DiscordSessionWrapper:
+			def __init__(self):
+				self._session = custom_session
 				
-				# Clean up the error message
-				error_msg = error_msg.replace("```", "'''")  # Remove nested code blocks
-				error_msg = error_msg.replace("\t", "    ")  # Replace tabs with spaces
-				
-				# Add code block formatting without language specification
-				formatted_body = f"{formatted_body}\n```\n{error_msg}\n```"
+			def __call__(self):
+				return self._session
+		
+		# Temporarily replace requests.Session for apprise
+		requests.Session = DiscordSessionWrapper()
+		
+		try:
+			apprise = Apprise()
+			urls: list[str] = CONFIG.apprise.urls
+			if not urls:
+				logging.debug("No urls found, not sending notification")
+				return
+
+			# Check if any Discord URLs are present
+			has_discord = any(url.startswith("discord://") for url in urls)
 			
-			# Restore any legitimate code blocks
-			formatted_body = formatted_body.replace("'''", "```")
-
-		# Add all configured notification URLs
-		for url in urls:
-			try:
-				apprise.add(url)
-			except Exception as add_error:
-				logging.error(f"Failed to add notification URL: {str(add_error)}")
-				continue
-
-		# Split message into parts if it's too long for Discord
-		message_parts = [formatted_body]
-		if has_discord:
-			message_parts = split_message(formatted_body)
-
-		# Send each part with retries
-		for part_num, message_part in enumerate(message_parts, 1):
-			part_title = title
-			if len(message_parts) > 1:
-				part_title = f"{title} (Part {part_num}/{len(message_parts)})"
-
-			# Attempt to send notification with retries
-			max_retries = 3
-			for attempt in range(max_retries):
-				try:
-					notification_result = apprise.notify(
-						title=str(part_title),
-						body=message_part
-					)
-
-					if notification_result:
-						logging.info(f"Notification part {part_num}/{len(message_parts)} sent successfully")
-						break
+			# Log Discord URL detection
+			if has_discord:
+				logging.info("[DISCORD IP] Discord URLs detected, using IP workaround")
+			
+			# Format the message for Discord
+			formatted_body = body
+			if has_discord:
+				# Clean and escape the message for Discord formatting
+				formatted_body = formatted_body.replace("```", "'''")  # Temporarily replace code blocks
+				formatted_body = formatted_body.replace("_", "\\_").replace("*", "\\*")
+				
+				# Handle exception formatting
+				if e is not None:
+					# Extract traceback if available
+					if hasattr(e, '__traceback__'):
+						import traceback
+						tb_str = ''.join(traceback.format_tb(e.__traceback__))
+						# Preserve the error type and message
+						error_type = e.__class__.__name__
+						error_msg = f"{error_type}: {str(e)}\n\nTraceback:\n{tb_str}"
 					else:
-						logging.error(f"Failed to send notification part {part_num} - attempt {attempt + 1}/{max_retries}")
-						if attempt < max_retries - 1:
-							time.sleep(2 ** attempt)  # Exponential backoff
-				except Exception as notify_error:
-					logging.error(f"Error sending notification part {part_num} (attempt {attempt + 1}/{max_retries}): {str(notify_error)}")
-					if attempt < max_retries - 1:
-						time.sleep(2 ** attempt)
-						continue
-					raise
+						error_type = e.__class__.__name__
+						error_msg = f"{error_type}: {str(e)}"
+					
+					# Clean up the error message
+					error_msg = error_msg.replace("```", "'''")  # Remove nested code blocks
+					error_msg = error_msg.replace("\t", "    ")  # Replace tabs with spaces
+					
+					# Add code block formatting without language specification
+					formatted_body = f"{formatted_body}\n```\n{error_msg}\n```"
+				
+				# Restore any legitimate code blocks
+				formatted_body = formatted_body.replace("'''", "```")
 
-			# Add a small delay between parts to avoid rate limiting
-			if part_num < len(message_parts):
-				time.sleep(1)
+			# Add all configured notification URLs
+			for url in urls:
+				try:
+					apprise.add(url)
+					if url.startswith("discord://"):
+						logging.info(f"[DISCORD IP] Added Discord webhook URL (will use IP {DiscordIPAdapter.DISCORD_IP})")
+				except Exception as add_error:
+					logging.error(f"Failed to add notification URL: {str(add_error)}")
+					continue
+
+			# Split message into parts if it's too long for Discord
+			message_parts = [formatted_body]
+			if has_discord:
+				message_parts = split_message(formatted_body)
+
+			# Send each part with retries
+			for part_num, message_part in enumerate(message_parts, 1):
+				part_title = title
+				if len(message_parts) > 1:
+					part_title = f"{title} (Part {part_num}/{len(message_parts)})"
+
+				# Attempt to send notification with retries
+				max_retries = 3
+				for attempt in range(max_retries):
+					try:
+						notification_result = apprise.notify(
+							title=str(part_title),
+							body=message_part
+						)
+
+						if notification_result:
+							logging.info(f"[DISCORD IP] Notification part {part_num}/{len(message_parts)} sent successfully using IP workaround")
+							break
+						else:
+							logging.error(f"Failed to send notification part {part_num} - attempt {attempt + 1}/{max_retries}")
+							if attempt < max_retries - 1:
+								time.sleep(2 ** attempt)  # Exponential backoff
+					except Exception as notify_error:
+						logging.error(f"Error sending notification part {part_num} (attempt {attempt + 1}/{max_retries}): {str(notify_error)}")
+						if attempt < max_retries - 1:
+							time.sleep(2 ** attempt)
+							continue
+						raise
+
+				# Add a small delay between parts to avoid rate limiting
+				if part_num < len(message_parts):
+					time.sleep(1)
+					
+		finally:
+			# Restore original requests.Session
+			if original_session:
+				requests.Session = original_session
 
 	except Exception as e:
 		logging.error(f"Fatal error in sendNotification: {str(e)}")
