@@ -1,0 +1,3 @@
+55 4 * * * bash /home/user/app/clean_mem.sh >/proc/1/fd/1 2>/proc/1/fd/2
+
+0 5 * * * TZ=America/New_York bash /home/user/app/src/run_daily.sh >/proc/1/fd/1 2>/proc/1/fd/2
