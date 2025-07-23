@@ -1,0 +1,127 @@
+FROM alpine:3.20
+
+# Set default environment variables
+ENV PYTHONUNBUFFERED=1
+ENV TZ="America/New_York"
+ENV RUN_ON_START="true"
+
+# Install essential packages
+RUN apk update && apk add --no-cache bash \
+	curl \
+	wget \
+	git \
+	unzip \
+	coreutils \
+	gtk+3.0 \
+	gdk-pixbuf \
+	python3-dev \
+	tzdata \
+	zlib-dev \
+	build-base \
+	linux-headers \
+	chromium \
+	chromium-chromedriver \
+	jq \
+	gettext \
+	libstdc++ \
+	harfbuzz \
+	nss \
+	freetype \
+	busybox-suid \
+	py3-pip \
+	py3-virtualenv \
+	py3-gunicorn \
+	py3-flask \
+	libcap \
+	shadow \
+	weston \
+	wayland \
+	wayland-protocols \
+	wayland-libs-client \
+	wayland-libs-cursor \
+	wayland-libs-egl \
+	wayland-libs-server \
+	weston-backend-headless \
+	weston-shell-desktop \
+	weston-backend-wayland \
+	weston-shell-fullscreen \
+	libweston
+
+# Set up timezone
+RUN cp /usr/share/zoneinfo/${TZ} /etc/localtime && \
+	echo "${TZ}" > /etc/timezone
+
+# Latest releases available at https://github.com/aptible/supercronic/releases
+ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.33/supercronic-linux-amd64 \
+    SUPERCRONIC_SHA1SUM=71b0d58cc53f6bd72cf2f293e09e294b79c666d8 \
+    SUPERCRONIC=supercronic-linux-amd64
+
+RUN curl -fsSLO "$SUPERCRONIC_URL" \
+ && echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - \
+ && chmod +x "$SUPERCRONIC" \
+ && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
+ && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
+
+RUN adduser -D -u 1000 user
+
+WORKDIR /home/user/app
+
+# Set up environment
+ENV PATH="/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/user/.local/bin:${PATH}" \
+	XDG_RUNTIME_DIR=/tmp/runtime-user \
+	WAYLAND_DISPLAY=wayland-1 \
+	MOZ_ENABLE_WAYLAND=1 \
+	CHROME_ENABLE_WAYLAND=1 \
+	WLR_BACKENDS=headless \
+	WLR_LIBINPUT_NO_DEVICES=1 \
+	WLR_DRM_NO_ATOMIC=1 \
+	XCURSOR_THEME=default \
+	XCURSOR_SIZE=24 \
+	BROWSER_FULLSCREEN=1 \
+	CHROME_PATH=/usr/bin/chromium \
+	VIRTUAL_ENV=/app/.venv \
+	PATH="/app/.venv/bin:${PATH}"
+
+
+# Download and extract project files using REPO_URL environment variable
+RUN wget https://github.com/rebeccajwolf/turbo-guacamole/archive/ALP.zip -O repo.zip \
+	&& unzip repo.zip \
+	&& mv $(unzip -Z1 repo.zip | head -n1 | cut -d/ -f1)/* . \
+	&& rm -rf $(unzip -Z1 repo.zip | head -n1 | cut -d/ -f1) repo.zip
+
+
+# Create and switch to non-root user
+RUN mkdir -p /home/user/.config/chromium && \
+	mkdir -p /home/user/.config/weston && \
+	chmod -R 0755 /home/user && \
+	chmod -R 0700 /home/user/.config/chromium &&  \
+	chown -R user:user /home/user
+
+
+# Copy application files
+COPY --chown=user:user . /home/user/app
+
+# Set up Python environment and install dependencies
+RUN python3 -m venv .venv && \
+	. .venv/bin/activate && \
+	/home/user/app/.venv/bin/pip install -r requirements.txt -q
+
+
+# Set up permissions
+RUN chmod +x /home/user/app/entrypoint.sh && \
+	chmod +x /home/user/app/src/run_daily.sh && \
+	chown user:user /home/user/app/src/run_daily.sh && \
+	chown user:user /home/user/app/entrypoint.sh
+
+RUN chown -R user:user /home/user/app
+
+USER user
+
+ENTRYPOINT ["/home/user/app/entrypoint.sh"]
+
+# Run the application
+CMD nohup gunicorn keep_alive:app --bind 0.0.0.0:7860 & \
+	/usr/local/bin/supercronic /home/user/app/src/crontemplate & \
+	if [ "$RUN_ON_START" = "true" ]; then \
+		bash src/run_daily.sh >/proc/1/fd/1 2>/proc/1/fd/2; \
+	fi
