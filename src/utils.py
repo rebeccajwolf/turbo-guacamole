@@ -18,6 +18,7 @@ import base64
 from flask import send_file
 from io import BytesIO
 from urllib.parse import urlparse
+import ssl
 
 import requests
 import os
@@ -1160,6 +1161,7 @@ def split_message(message: str, max_length: int = 1900) -> List[str]:
 def send_discord_webhook_direct(webhook_url: str, content: str, max_retries: int = 3) -> bool:
 	"""
 	Send Discord webhook directly using requests with IP bypass, similar to the TypeScript implementation.
+	This function disables SSL verification for the IP-based requests to avoid certificate mismatch errors.
 	
 	Args:
 		webhook_url: The Discord webhook URL
@@ -1203,14 +1205,31 @@ def send_discord_webhook_direct(webhook_url: str, content: str, max_retries: int
 		# Attempt to send with retries
 		for attempt in range(max_retries):
 			try:
-				session = makeRequestsSession()
+				# Create a session with custom configuration for IP bypass
+				session = requests.Session()
+				
+				# Set up retry strategy (but not for SSL errors)
+				retry_strategy = Retry(
+					total=0,  # We'll handle retries manually
+					backoff_factor=1,
+					status_forcelist=[429, 500, 502, 503, 504],
+				)
+				
+				adapter = HTTPAdapter(max_retries=retry_strategy)
+				session.mount("https://", adapter)
+				session.mount("http://", adapter)
+				
+				# Disable SSL verification and warnings for IP-based requests
+				# This is necessary because the SSL certificate is for discord.com, not the IP
+				import urllib3
+				urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 				
 				response = session.post(
 					bypass_url,
 					headers=headers,
 					json=data,
 					timeout=10,
-					verify=True
+					verify=False  # Disable SSL verification for IP-based requests
 				)
 				
 				if response.status_code in [200, 204]:
@@ -1230,6 +1249,15 @@ def send_discord_webhook_direct(webhook_url: str, content: str, max_retries: int
 					else:
 						return False
 						
+			except requests.exceptions.SSLError as ssl_error:
+				logging.warning(f"[DISCORD DIRECT] SSL error (attempt {attempt + 1}/{max_retries}): {str(ssl_error)}")
+				if attempt < max_retries - 1:
+					time.sleep(2 ** attempt)  # Exponential backoff
+					continue
+				else:
+					logging.error(f"[DISCORD DIRECT] All SSL retry attempts failed")
+					return False
+					
 			except requests.exceptions.RequestException as e:
 				logging.error(f"[DISCORD DIRECT] Request error (attempt {attempt + 1}/{max_retries}): {str(e)}")
 				if attempt < max_retries - 1:
