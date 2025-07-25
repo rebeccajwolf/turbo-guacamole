@@ -1189,7 +1189,6 @@ def convert_discord_url_to_ip(url: str) -> str:
 				converted_url += "?:method=POST"
 				converted_url += "&:headers=Host=discord.com"
 				converted_url += "&:headers=Content-Type=application/json"
-				converted_url += "&:headers=User-Agent=Apprise"
 				
 				# Add the payload template for Discord webhook format
 				converted_url += "&:payload=%7B%22content%22%3A%22%24%7Bbody%7D%7D%22%7D"  # URL encoded: {"content":"${body}"}
