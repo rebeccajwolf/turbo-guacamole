@@ -17,6 +17,7 @@ from copy import deepcopy
 import base64
 from flask import send_file
 from io import BytesIO
+from urllib.parse import urlparse
 
 import requests
 import os
@@ -1156,50 +1157,92 @@ def split_message(message: str, max_length: int = 1900) -> List[str]:
 	return parts
 
 
-def convert_discord_url_to_ip(url: str) -> str:
+def send_discord_webhook_direct(webhook_url: str, content: str, max_retries: int = 3) -> bool:
 	"""
-	Convert Discord webhook URL to use IP address instead of discord.com domain.
-	This helps bypass domain blocking in certain environments like Hugging Face Spaces.
+	Send Discord webhook directly using requests with IP bypass, similar to the TypeScript implementation.
+	
+	Args:
+		webhook_url: The Discord webhook URL
+		content: The message content to send
+		max_retries: Maximum number of retry attempts
+		
+	Returns:
+		bool: True if successful, False otherwise
 	"""
-	# Discord's IP addresses (multiple for load balancing)
-	discord_ips = [
-		"162.159.128.233",
-		"162.159.129.233", 
-		"162.159.130.233"
-	]
+	try:
+		# Parse the webhook URL
+		parsed_url = urlparse(webhook_url)
+		
+		# Discord's IP addresses (multiple for load balancing)
+		discord_ips = [
+			"162.159.128.233",
+			"162.159.129.233", 
+			"162.159.130.233"
+		]
+		
+		# Use the first IP as primary
+		discord_ip = discord_ips[0]
+		
+		# Create URL with IP instead of hostname
+		bypass_url = f"https://{discord_ip}{parsed_url.path}"
+		if parsed_url.query:
+			bypass_url += f"?{parsed_url.query}"
+		
+		# Prepare headers
+		headers = {
+			'Host': parsed_url.hostname,
+			'Content-Type': 'application/json',
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+		}
+		
+		# Prepare data
+		data = {
+			'content': content
+		}
+		
+		# Attempt to send with retries
+		for attempt in range(max_retries):
+			try:
+				session = makeRequestsSession()
+				
+				response = session.post(
+					bypass_url,
+					headers=headers,
+					json=data,
+					timeout=10,
+					verify=True
+				)
+				
+				if response.status_code in [200, 204]:
+					logging.info(f"[DISCORD DIRECT] Successfully sent webhook message via IP {discord_ip}")
+					return True
+				elif response.status_code == 429:
+					# Rate limited, wait and retry
+					retry_after = response.headers.get('Retry-After', 1)
+					logging.warning(f"[DISCORD DIRECT] Rate limited, waiting {retry_after}s before retry {attempt + 1}/{max_retries}")
+					time.sleep(float(retry_after))
+					continue
+				else:
+					logging.error(f"[DISCORD DIRECT] HTTP {response.status_code}: {response.text}")
+					if attempt < max_retries - 1:
+						time.sleep(2 ** attempt)  # Exponential backoff
+						continue
+					else:
+						return False
+						
+			except requests.exceptions.RequestException as e:
+				logging.error(f"[DISCORD DIRECT] Request error (attempt {attempt + 1}/{max_retries}): {str(e)}")
+				if attempt < max_retries - 1:
+					time.sleep(2 ** attempt)  # Exponential backoff
+					continue
+				else:
+					return False
+					
+	except Exception as e:
+		logging.error(f"[DISCORD DIRECT] Fatal error in send_discord_webhook_direct: {str(e)}")
+		return False
 	
-	# Use the first IP as primary
-	discord_ip = discord_ips[0]
-	
-	if url.startswith("discord://"):
-		# Parse the discord:// URL format
-		# Format: discord://webhook_id/webhook_token
-		try:
-			# Extract webhook parts
-			url_parts = url.replace("discord://", "").split("/")
-			if len(url_parts) >= 2:
-				webhook_id = url_parts[0]
-				webhook_token = url_parts[1]
-				
-				# Create a custom URL scheme that apprise will handle as JSON
-				# We'll use a json:// format that points to Discord's API via IP
-				converted_url = f"json://{discord_ip}/api/webhooks/{webhook_id}/{webhook_token}"
-				
-				# Add necessary headers for Discord API
-				converted_url += "?:method=POST"
-				converted_url += "&:headers=Host=discord.com"
-				converted_url += "&:headers=Content-Type=application/json"
-				
-				# Add the payload template for Discord webhook format
-				converted_url += "&:payload=%7B%22content%22%3A%22%24%7Bbody%7D%7D%22%7D"  # URL encoded: {"content":"${body}"}
-				
-				logging.info(f"[DISCORD IP] Converted Discord URL to use IP {discord_ip}")
-				return converted_url
-		except Exception as e:
-			logging.error(f"[DISCORD IP] Error converting Discord URL: {str(e)}")
-			return url
-	
-	return url
+	return False
 
 
 def sendNotification(title: str, body: str, e: Exception = None) -> None:
@@ -1209,18 +1252,34 @@ def sendNotification(title: str, body: str, e: Exception = None) -> None:
 		):
 			return
 		
-		apprise = Apprise()
 		urls: list[str] = CONFIG.apprise.urls
 		if not urls:
 			logging.debug("No urls found, not sending notification")
 			return
 
-		# Check if any Discord URLs are present and convert them
-		has_discord = any(url.startswith("discord://") for url in urls)
+		# Separate Discord webhooks from other notification URLs
+		discord_urls = []
+		other_urls = []
 		
+		for url in urls:
+			if url.startswith("discord://"):
+				# Convert discord:// format to full webhook URL
+				try:
+					url_parts = url.replace("discord://", "").split("/")
+					if len(url_parts) >= 2:
+						webhook_id = url_parts[0]
+						webhook_token = url_parts[1]
+						full_webhook_url = f"https://discord.com/api/webhooks/{webhook_id}/{webhook_token}"
+						discord_urls.append(full_webhook_url)
+				except Exception as convert_error:
+					logging.error(f"[DISCORD] Error converting Discord URL {url}: {str(convert_error)}")
+					continue
+			else:
+				other_urls.append(url)
+
 		# Format the message for Discord
 		formatted_body = body
-		if has_discord:
+		if discord_urls:
 			# Clean and escape the message for Discord formatting
 			formatted_body = formatted_body.replace("```", "'''")  # Temporarily replace code blocks
 			formatted_body = formatted_body.replace("_", "\\_").replace("*", "\\*")
@@ -1248,62 +1307,67 @@ def sendNotification(title: str, body: str, e: Exception = None) -> None:
 			# Restore any legitimate code blocks
 			formatted_body = formatted_body.replace("'''", "```")
 
-		# Process and add all configured notification URLs
-		for url in urls:
-			try:
-				# Convert Discord URLs to use IP addresses if needed
-				processed_url = convert_discord_url_to_ip(url) if url.startswith("discord://") else url
-				
-				apprise.add(processed_url)
-				
-				if url.startswith("discord://"):
-					logging.info("[DISCORD IP] Added Discord webhook URL with IP workaround")
-				else:
-					logging.info(f"Added notification URL: {url[:20]}...")
-					
-			except Exception as add_error:
-				logging.error(f"Failed to add notification URL: {str(add_error)}")
-				continue
-
-		# Split message into parts if it's too long for Discord
-		message_parts = [formatted_body]
-		if has_discord:
+		# Handle Discord webhooks directly
+		if discord_urls:
+			# Split message into parts if it's too long for Discord
 			message_parts = split_message(formatted_body)
 
-		# Send each part with retries
-		for part_num, message_part in enumerate(message_parts, 1):
-			part_title = title
-			if len(message_parts) > 1:
-				part_title = f"{title} (Part {part_num}/{len(message_parts)})"
+			# Send to each Discord webhook
+			for discord_url in discord_urls:
+				for part_num, message_part in enumerate(message_parts, 1):
+					part_title = title
+					if len(message_parts) > 1:
+						part_title = f"{title} (Part {part_num}/{len(message_parts)})"
 
-			# Attempt to send notification with retries
+					# Create full message with title
+					full_message = f"**{part_title}**\n{message_part}"
+					
+					# Send via direct method
+					success = send_discord_webhook_direct(discord_url, full_message)
+					
+					if success:
+						logging.info(f"[DISCORD] Successfully sent notification part {part_num}/{len(message_parts)}")
+					else:
+						logging.error(f"[DISCORD] Failed to send notification part {part_num}/{len(message_parts)}")
+
+					# Add a small delay between parts to avoid rate limiting
+					if part_num < len(message_parts):
+						time.sleep(1)
+
+		# Handle other notification URLs via apprise
+		if other_urls:
+			apprise = Apprise()
+			
+			# Add other URLs to apprise
+			for url in other_urls:
+				try:
+					apprise.add(url)
+					logging.info(f"[APPRISE] Added notification URL: {url[:20]}...")
+				except Exception as add_error:
+					logging.error(f"[APPRISE] Failed to add notification URL: {str(add_error)}")
+					continue
+
+			# Send notification via apprise
 			max_retries = 3
 			for attempt in range(max_retries):
 				try:
 					notification_result = apprise.notify(
-						title=str(part_title),
-						body=message_part
+						title=str(title),
+						body=body
 					)
 
 					if notification_result:
-						logging.info(f"Notification part {part_num}/{len(message_parts)} sent successfully")
+						logging.info(f"[APPRISE] Notification sent successfully")
 						break
 					else:
-						logging.error(f"Failed to send notification part {part_num} - attempt {attempt + 1}/{max_retries}")
+						logging.error(f"[APPRISE] Failed to send notification - attempt {attempt + 1}/{max_retries}")
 						if attempt < max_retries - 1:
 							time.sleep(2 ** attempt)  # Exponential backoff
 				except Exception as notify_error:
-					logging.error(f"Error sending notification part {part_num} (attempt {attempt + 1}/{max_retries}): {str(notify_error)}")
+					logging.error(f"[APPRISE] Error sending notification (attempt {attempt + 1}/{max_retries}): {str(notify_error)}")
 					if attempt < max_retries - 1:
 						time.sleep(2 ** attempt)
 						continue
-					else:
-						# If all retries failed, try a fallback approach
-						logging.error(f"All retry attempts failed for notification part {part_num}")
-
-			# Add a small delay between parts to avoid rate limiting
-			if part_num < len(message_parts):
-				time.sleep(1)
 
 	except Exception as e:
 		logging.error(f"Fatal error in sendNotification: {str(e)}")
