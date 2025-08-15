@@ -136,7 +136,8 @@ def downloadWebDriver():
 		version_number = response.text
 		# Download the zip file
 		# download_url = "https://chromedriver.storage.googleapis.com/" + version_number +"/chromedriver_linux64.zip"
-		download_url = "https://storage.googleapis.com/chrome-for-testing-public/128.0.6613.119/linux64/chromedriver-linux64.zip"
+		# download_url = "https://storage.googleapis.com/chrome-for-testing-public/128.0.6613.119/linux64/chromedriver-linux64.zip"
+        download_url = "https://storage.googleapis.com/chrome-for-testing-public/134.0.6998.165/linux64/chromedriver-linux64.zip"
 		latest_driver_zip = wget.download(download_url, 'chromedriver.zip')
 		
 		# Create a temporary directory for extraction
