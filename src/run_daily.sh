@@ -11,7 +11,7 @@ cd /home/user/app
 
 # Define the minimum and maximum wait times in seconds
 MINWAIT=$((5*60))  # 5 minutes
-MAXWAIT=$((20*60)) # 50 minutes
+MAXWAIT=$((7*60)) # 7 minutes
 
 # Calculate a random sleep time within the specified range
 SLEEPTIME=$((MINWAIT + RANDOM % (MAXWAIT - MINWAIT)))
@@ -78,7 +78,7 @@ echo "Sleeping for $SLEEP_MINUTES minutes ($SLEEPTIME seconds)..."
 
 # Sleep for the calculated time
 # sleep $SLEEPTIME
-# til $(date -d "$SLEEP_MINUTES minutes" +%H:%M)
+til $(date -d "$SLEEP_MINUTES minutes" +%H:%M)
 
 # Log the start of the script
 echo "Starting script..."
